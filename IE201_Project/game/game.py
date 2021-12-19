@@ -24,23 +24,23 @@ class Booster:
         pass
 
 
-class MainFish():
+class MainFish:
     def __init__(self):
         # super(MainFish, self).__init__()
-        self._width = 60
-        self._height = 38
+        self._width = 30
+        self._height = 20
         self._main_fish = pygame.image.load("game_assets/fish_images/main_fish.png")
         self._main_fish = pygame.transform.scale(self._main_fish, (self._width, self._height))
         self._main_fish_rect = self._main_fish.get_rect(center=(650, 300))
         self._vel_x = 0
         self._vel_y = 0
-        self._acceleration = 1
+        self._acceleration = 0.7
 
     def get_width(self):
-        return self._width
+        return self._main_fish_rect.width
 
     def get_height(self):
-        return self._height
+        return self._main_fish_rect.height
 
     def get_image(self):
         return self._main_fish
@@ -74,10 +74,15 @@ class MainFish():
     def corner_horizontal(self):
         self._vel_x = 0
 
-class OtherFish():
-    def __init__(self):
+    def increase_size(self):
+        self._main_fish_rect.width *= 1.05
+        self._main_fish_rect.height = self._main_fish_rect.width*0.7
+        self._main_fish = pygame.transform.scale(self._main_fish, (self._main_fish_rect.width, self._main_fish_rect.height))
+
+class OtherFish:
+    def __init__(self, _width):
         # super(OtherFish, self).__init__()
-        self._width = random.uniform(35, 75)
+        self._width = random.uniform(_width*0.5, _width*1.3)
         self._height = self._width*0.75
         self._other_fish = pygame.image.load("game_assets/fish_images/other_fish.png")
         self._other_fish = pygame.transform.scale(self._other_fish, (self._width, self._height))
@@ -188,11 +193,11 @@ class Game:
         self._main_fish = MainFish()
         for i in range(5):
             while True:
-                fish = OtherFish()
+                fish = OtherFish(self._main_fish.get_width())
                 if self._main_fish.get_rect().colliderect(fish.get_rect()):
                     del fish
                     continue
-                self._other_fish.append(OtherFish())
+                self._other_fish.append(OtherFish(self._main_fish.get_width()))
                 break
 
     def finish_game(self):
@@ -219,11 +224,11 @@ class Game:
                 if game_time >= 4000:
                     game_time = 0
                     while True:
-                        fish = OtherFish()
+                        fish = OtherFish(self._main_fish.get_width())
                         if self._main_fish.get_rect().colliderect(fish.get_rect()):
                             del fish
                             continue
-                        self._other_fish.append(OtherFish())
+                        self._other_fish.append(OtherFish(self._main_fish.get_width()))
                         break
                     for fish in self._other_fish:
                         fish.update_velocity()
@@ -256,6 +261,7 @@ class Game:
                         if (fish.get_width() * fish.get_height()) <= self._main_fish.get_width() * self._main_fish.get_height():
                             remove_list.append(fish)
                             self._score += 1
+                            self._main_fish.increase_size()
                         else:
                             self._game_is_on = False
                             self.finish_game()
@@ -265,6 +271,7 @@ class Game:
                             if (fish.get_width()*fish.get_height()) <= self._main_fish.get_width()*self._main_fish.get_height():
                                 remove_list.append(fish)
                                 self._score += 1
+                                self._main_fish.increase_size()
                             else:
                                 self._game_is_on = False
                                 self.finish_game()
