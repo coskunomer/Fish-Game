@@ -2,7 +2,7 @@ import random
 import pygame
 import sys
 import time
-
+pygame.init()
 
 class Fish:
     def __init__(self):
@@ -27,11 +27,11 @@ class Booster:
 class MainFish():
     def __init__(self):
         # super(MainFish, self).__init__()
-        self._width = 80
-        self._height = 48
+        self._width = 60
+        self._height = 38
         self._main_fish = pygame.image.load("game_assets/fish_images/main_fish.png")
         self._main_fish = pygame.transform.scale(self._main_fish, (self._width, self._height))
-        self._main_fish_rect = self._main_fish.get_rect()
+        self._main_fish_rect = self._main_fish.get_rect(center=(650, 300))
         self._vel_x = 0
         self._vel_y = 0
         self._acceleration = 1
@@ -77,13 +77,13 @@ class MainFish():
 class OtherFish():
     def __init__(self):
         # super(OtherFish, self).__init__()
-        self._width = 60
-        self._height = 36
+        self._width = 40
+        self._height = 24
         self._other_fish = pygame.image.load("game_assets/fish_images/other_fish.png")
         self._other_fish = pygame.transform.scale(self._other_fish, (self._width, self._height))
-        self._other_fish_rect = self._other_fish.get_rect()
-        self._vel_x = 5
-        self._vel_y = 3
+        self._other_fish_rect = self._other_fish.get_rect(topleft=(random.uniform(50, 1250), random.uniform(50, 550)))
+        self._vel_x = random.uniform(-5, 5)
+        self._vel_y = random.uniform(-3, 3)
 
     def get_width(self):
         return self._width
@@ -104,18 +104,18 @@ class OtherFish():
         return self._vel_x
 
     def update_velocity(self):
-        self._vel_x = random.uniform(-3, 4)
-        self._vel_y = random.uniform(-1, 3)
+        self._vel_x = random.uniform(-5, 5)
+        self._vel_y = random.uniform(-3, 3)
 
     def move_fish(self):
         self._other_fish_rect.x += self._vel_x
         self._other_fish_rect.y += self._vel_y
 
     def corner_vertical(self):
-        self._vel_y = 0
+        self._vel_y = -self._vel_y
 
     def corner_horizontal(self):
-        self._vel_x = 0
+        self._vel_x = -self._vel_x
 
 
 class JellyFish(SeaAnimals):
@@ -168,6 +168,8 @@ class Game:
         self._background = pygame.transform.scale(self._background, (self._width, self._height))
         self._main_fish = MainFish()
         self._other_fish = []
+        self._score = 0
+        self._font = pygame.font.SysFont("monospace", 25)
         for i in range(5):
             self._other_fish.append(OtherFish())
         # self._other_fish = OtherFish()
@@ -185,10 +187,12 @@ class Game:
         while True:
             self._screen.fill("White")
             self._screen.blit(self._background, (0, 0))
-            print(clock.get_time())
+            scoretext = self._font.render("SCORE : " + str(self._score), True, (255, 255, 255))
+            self._screen.blit(scoretext, (1100, 50))
             game_time += clock.get_time()
-            if game_time >= 3000:
+            if game_time >= 4000:
                 game_time = 0
+                self._other_fish.append(OtherFish())
                 for fish in self._other_fish:
                     fish.update_velocity()
             clock.tick(100)
@@ -211,14 +215,27 @@ class Game:
                 self._main_fish.corner_horizontal()
 
             self._main_fish.move_main_fish()
+            remove_list = []
             for fish in self._other_fish:
                 if fish.get_rect().top + fish.get_vertical_velocity() < 0 or fish.get_rect().bottom + fish.get_vertical_velocity() > self._height:
                     fish.corner_vertical()
 
                 if fish.get_rect().left + fish.get_horizontal_velocity() < 0 or fish.get_rect().right + fish.get_horizontal_velocity() > self._width:
                     fish.corner_horizontal()
-                fish.move_fish()
-                self._screen.blit(fish.get_image(), fish.get_rect())
+                if self._main_fish.get_rect().colliderect(fish.get_rect()):
+                    remove_list.append(fish)
+                    self._score += 1
+                else:
+                    fish.move_fish()
+                    if self._main_fish.get_rect().colliderect(fish.get_rect()):
+                        remove_list.append(fish)
+                        self._score += 1
+                    else:
+                        self._screen.blit(fish.get_image(), fish.get_rect())
+
+            for fish in remove_list:
+                self._other_fish.remove(fish)
+                del fish
 
             self._screen.blit(self._main_fish.get_image(), self._main_fish.get_rect())
             pygame.display.flip()
