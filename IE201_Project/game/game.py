@@ -77,8 +77,8 @@ class MainFish():
 class OtherFish():
     def __init__(self):
         # super(OtherFish, self).__init__()
-        self._width = 40
-        self._height = 24
+        self._width = random.uniform(35, 75)
+        self._height = self._width*0.75
         self._other_fish = pygame.image.load("game_assets/fish_images/other_fish.png")
         self._other_fish = pygame.transform.scale(self._other_fish, (self._width, self._height))
         self._other_fish_rect = self._other_fish.get_rect(topleft=(random.uniform(50, 1250), random.uniform(50, 550)))
@@ -169,7 +169,9 @@ class Game:
         self._main_fish = MainFish()
         self._other_fish = []
         self._score = 0
-        self._font = pygame.font.SysFont("monospace", 25)
+        self._font_score = pygame.font.SysFont("monospace", 25)
+        self._font_game_over = pygame.font.SysFont("monospace", 70)
+        self._game_is_on = True
         for i in range(5):
             self._other_fish.append(OtherFish())
         # self._other_fish = OtherFish()
@@ -187,17 +189,24 @@ class Game:
         while True:
             self._screen.fill("White")
             self._screen.blit(self._background, (0, 0))
-            scoretext = self._font.render("SCORE : " + str(self._score), True, (255, 255, 255))
-            self._screen.blit(scoretext, (1100, 50))
-            game_time += clock.get_time()
-            if game_time >= 4000:
-                game_time = 0
-                self._other_fish.append(OtherFish())
-                for fish in self._other_fish:
-                    fish.update_velocity()
-            clock.tick(100)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT: sys.exit()
+            if self._game_is_on:
+                scoretext = self._font_score.render("SCORE : " + str(self._score), True, (255, 255, 255))
+                self._screen.blit(scoretext, (1100, 50))
+                game_time += clock.get_time()
+                if game_time >= 4000:
+                    game_time = 0
+                    while True:
+                        fish = OtherFish()
+                        if self._main_fish.get_rect().colliderect(fish.get_rect()):
+                            del fish
+                            continue
+                        self._other_fish.append(OtherFish())
+                        break
+                    for fish in self._other_fish:
+                        fish.update_velocity()
+                clock.tick(100)
                 key_input = pygame.key.get_pressed()
                 if key_input[pygame.K_LEFT]:
                     self._main_fish.control_main_fish("l")
@@ -208,36 +217,45 @@ class Game:
                 if key_input[pygame.K_DOWN]:
                     self._main_fish.control_main_fish("d")
 
-            if self._main_fish.get_rect().top + self._main_fish.get_vertical_velocity() < 0 or self._main_fish.get_rect().bottom + self._main_fish.get_vertical_velocity() > self._height:
-                self._main_fish.corner_vertical()
+                if self._main_fish.get_rect().top + self._main_fish.get_vertical_velocity() < 0 or self._main_fish.get_rect().bottom + self._main_fish.get_vertical_velocity() > self._height:
+                    self._main_fish.corner_vertical()
 
-            if self._main_fish.get_rect().left + self._main_fish.get_horizontal_velocity() < 0 or self._main_fish.get_rect().right + self._main_fish.get_horizontal_velocity() > self._width:
-                self._main_fish.corner_horizontal()
+                if self._main_fish.get_rect().left + self._main_fish.get_horizontal_velocity() < 0 or self._main_fish.get_rect().right + self._main_fish.get_horizontal_velocity() > self._width:
+                    self._main_fish.corner_horizontal()
 
-            self._main_fish.move_main_fish()
-            remove_list = []
-            for fish in self._other_fish:
-                if fish.get_rect().top + fish.get_vertical_velocity() < 0 or fish.get_rect().bottom + fish.get_vertical_velocity() > self._height:
-                    fish.corner_vertical()
+                self._main_fish.move_main_fish()
+                remove_list = []
+                for fish in self._other_fish:
+                    if fish.get_rect().top + fish.get_vertical_velocity() < 0 or fish.get_rect().bottom + fish.get_vertical_velocity() > self._height:
+                        fish.corner_vertical()
 
-                if fish.get_rect().left + fish.get_horizontal_velocity() < 0 or fish.get_rect().right + fish.get_horizontal_velocity() > self._width:
-                    fish.corner_horizontal()
-                if self._main_fish.get_rect().colliderect(fish.get_rect()):
-                    remove_list.append(fish)
-                    self._score += 1
-                else:
-                    fish.move_fish()
+                    if fish.get_rect().left + fish.get_horizontal_velocity() < 0 or fish.get_rect().right + fish.get_horizontal_velocity() > self._width:
+                        fish.corner_horizontal()
                     if self._main_fish.get_rect().colliderect(fish.get_rect()):
-                        remove_list.append(fish)
-                        self._score += 1
+                        if (fish.get_width() * fish.get_height()) <= self._main_fish.get_width() * self._main_fish.get_height():
+                            remove_list.append(fish)
+                            self._score += 1
+                        else:
+                            self._game_is_on = False
                     else:
-                        self._screen.blit(fish.get_image(), fish.get_rect())
+                        fish.move_fish()
+                        if self._main_fish.get_rect().colliderect(fish.get_rect()):
+                            if (fish.get_width()*fish.get_height()) <= self._main_fish.get_width()*self._main_fish.get_height():
+                                remove_list.append(fish)
+                                self._score += 1
+                            else:
+                                self._game_is_on = False
+                        else:
+                            self._screen.blit(fish.get_image(), fish.get_rect())
 
-            for fish in remove_list:
-                self._other_fish.remove(fish)
-                del fish
+                for fish in remove_list:
+                    self._other_fish.remove(fish)
+                    del fish
 
-            self._screen.blit(self._main_fish.get_image(), self._main_fish.get_rect())
+                self._screen.blit(self._main_fish.get_image(), self._main_fish.get_rect())
+            else:
+                text = self._font_game_over.render("GAME IS OVER", True, (255, 255, 255))
+                self._screen.blit(text, (350, 250))
             pygame.display.flip()
             pygame.display.update()
 
