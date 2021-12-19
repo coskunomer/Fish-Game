@@ -185,6 +185,7 @@ class Game:
 
     def start_game(self, start):
         if start == False: return 0
+        self._main_fish = MainFish()
         for i in range(5):
             while True:
                 fish = OtherFish()
@@ -198,6 +199,7 @@ class Game:
         for fish in self._other_fish:
             del fish
         self._other_fish = []
+        self._score = 0
 
     def run_game(self):
         clock = pygame.time.Clock()
