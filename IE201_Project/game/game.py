@@ -4,8 +4,46 @@ import sys
 pygame.init()
 
 class Fish:
-    def __init__(self):
-        pass
+    def __init__(self, _width):
+        self._width = random.uniform(_width * 0.5, _width * 1.3)
+        self._height = self._width * 0.75
+        self._fish = pygame.image.load("game_assets/fish_images/other_fish.png")
+        self._fish = pygame.transform.scale(self._fish, (self._width, self._height))
+        self._fish_rect = self._fish.get_rect(topleft=(random.uniform(50, 1250), random.uniform(50, 550)))
+        self._vel_x = random.uniform(-5, 5)
+        self._vel_y = random.uniform(-3, 3)
+
+    def get_width(self):
+        return self._width
+
+    def get_height(self):
+        return self._height
+
+    def get_image(self):
+        return self._fish
+
+    def get_rect(self):
+        return self._fish_rect
+
+    def get_vertical_velocity(self):
+        return self._vel_y
+
+    def get_horizontal_velocity(self):
+        return self._vel_x
+
+    def update_velocity(self):
+        self._vel_x = random.uniform(-5, 5)
+        self._vel_y = random.uniform(-3, 3)
+
+    def move_fish(self):
+        self._fish_rect.x += self._vel_x
+        self._fish_rect.y += self._vel_y
+
+    def corner_vertical(self):
+        self._vel_y = -self._vel_y
+
+    def corner_horizontal(self):
+        self._vel_x = -self._vel_x
 
 
 class SeaAnimals:
@@ -23,35 +61,17 @@ class Booster:
         pass
 
 
-class MainFish:
+class MainFish(Fish):
     def __init__(self):
-        # super(MainFish, self).__init__()
+        super(MainFish, self).__init__(_width=30)
         self._width = 30
-        self._height = 20
-        self._main_fish = pygame.image.load("game_assets/fish_images/main_fish.png")
-        self._main_fish = pygame.transform.scale(self._main_fish, (self._width, self._height))
-        self._main_fish_rect = self._main_fish.get_rect(center=(650, 300))
+        self._height = self._width*2/3
+        self._fish = pygame.image.load("game_assets/fish_images/main_fish.png")
+        self._fish = pygame.transform.scale(self._fish, (self._width, self._height))
+        self._fish_rect = self._fish.get_rect(center=(650, 300))
         self._vel_x = 0
         self._vel_y = 0
         self._acceleration = 0.5
-
-    def get_width(self):
-        return self._main_fish_rect.width
-
-    def get_height(self):
-        return self._main_fish_rect.height
-
-    def get_image(self):
-        return self._main_fish
-
-    def get_rect(self):
-        return self._main_fish_rect
-
-    def get_vertical_velocity(self):
-        return self._vel_y
-
-    def get_horizontal_velocity(self):
-        return self._vel_x
 
     def control_main_fish(self, type):
         if type == "l" and abs(self._vel_x - self._acceleration) < (500 / self.get_width()):
@@ -64,8 +84,8 @@ class MainFish:
             self._vel_y -= self._acceleration
 
     def move_main_fish(self):
-        self._main_fish_rect.x += self._vel_x
-        self._main_fish_rect.y += self._vel_y
+        self._fish_rect.x += self._vel_x
+        self._fish_rect.y += self._vel_y
 
     def corner_vertical(self):
         self._vel_y = 0
@@ -74,9 +94,9 @@ class MainFish:
         self._vel_x = 0
 
     def increase_size(self):
-        self._main_fish_rect.width *= 1.05
-        self._main_fish_rect.height = self._main_fish_rect.width*0.7
-        self._main_fish = pygame.transform.scale(self._main_fish, (self._main_fish_rect.width, self._main_fish_rect.height))
+        self._fish_rect.width *= 1.05
+        self._fish_rect.height = self._fish_rect.width*2/3
+        self._fish = pygame.transform.scale(self._fish, (self._fish_rect.width, self._fish_rect.height))
 
     def update_acceleration(self):
         self._acceleration = 300 / (self.get_height() * self.get_width())
@@ -84,82 +104,26 @@ class MainFish:
     def decelerate(self):
         pass
 
-
-class OtherFish:
-    def __init__(self, _width):
-        # super(OtherFish, self).__init__()
-        self._width = random.uniform(_width*0.5, _width*1.3)
-        self._height = self._width*0.75
-        self._other_fish = pygame.image.load("game_assets/fish_images/other_fish.png")
-        self._other_fish = pygame.transform.scale(self._other_fish, (self._width, self._height))
-        self._other_fish_rect = self._other_fish.get_rect(topleft=(random.uniform(50, 1250), random.uniform(50, 550)))
-        self._vel_x = random.uniform(-5, 5)
-        self._vel_y = random.uniform(-3, 3)
-
-    def get_width(self):
-        return self._width
-
-    def get_height(self):
-        return self._height
-
-    def get_image(self):
-        return self._other_fish
-
-    def get_rect(self):
-        return self._other_fish_rect
-
-    def get_vertical_velocity(self):
-        return self._vel_y
-
-    def get_horizontal_velocity(self):
-        return self._vel_x
-
-    def update_velocity(self):
-        self._vel_x = random.uniform(-5, 5)
-        self._vel_y = random.uniform(-3, 3)
-
-    def move_fish(self):
-        self._other_fish_rect.x += self._vel_x
-        self._other_fish_rect.y += self._vel_y
-
-    def corner_vertical(self):
-        self._vel_y = -self._vel_y
-
-    def corner_horizontal(self):
-        self._vel_x = -self._vel_x
-
-class JellyFish():
+class JellyFish(Fish):
     def __init__(self):
-        #super(JellyFish, self).__init__()
+        super(JellyFish, self).__init__(_width=40)
         self._width = 40
         self._height = 80
-        self._jelly_fish = pygame.image.load("game_assets/jellyfish/jellyfish.jpg")
-        self._jelly_fish = pygame.transform.scale(self._jelly_fish, (self._width, self._height))
-        self._jelly_fish_rect = self._jelly_fish.get_rect(topleft=(random.uniform(100, 600), random.choice([1, 509])))
+        self._fish = pygame.image.load("game_assets/jellyfish/jellyfish.jpg")
+        self._fish = pygame.transform.scale(self._fish, (self._width, self._height))
+        self._fish_rect = self._fish.get_rect(topleft=(random.uniform(100, 600), random.choice([1, 509])))
         self._vel_x = 0
         self._vel_y = random.uniform(3, 8)
 
     def move(self):
-        self._jelly_fish_rect.x += self._vel_x
-        self._jelly_fish_rect.y += self._vel_y
+        self._fish_rect.x += self._vel_x
+        self._fish_rect.y += self._vel_y
 
     def corner_vertical(self):
         self._vel_y = -self._vel_y
 
     def corner_horizontal(self):
         self._vel_x = -self._vel_x
-
-    def get_image(self):
-        return self._jelly_fish
-
-    def get_rect(self):
-        return self._jelly_fish_rect
-
-    def get_vertical_velocity(self):
-        return self._vel_y
-
-    def get_horizontal_velocity(self):
-        return self._vel_x
 
 
 class Octapus(SeaAnimals):
@@ -235,11 +199,11 @@ class Game:
         self._main_fish = MainFish()
         for i in range(5):
             while True:
-                fish = OtherFish(self._main_fish.get_width())
+                fish = Fish(self._main_fish.get_width())
                 if self._main_fish.get_rect().colliderect(fish.get_rect()):
                     del fish
                     continue
-                self._other_fish.append(OtherFish(self._main_fish.get_width()))
+                self._other_fish.append(Fish(self._main_fish.get_width()))
                 break
 
     def finish_game(self):
@@ -294,12 +258,12 @@ class Game:
                 if game_time >= 4000:
                     game_time = 0
                     while True:
-                        fish = OtherFish(self._main_fish.get_width())
+                        fish = Fish(self._main_fish.get_width())
                         # we again check if it collides with our fish
                         if self._main_fish.get_rect().colliderect(fish.get_rect()):
                             del fish
                             continue
-                        self._other_fish.append(OtherFish(self._main_fish.get_width()))
+                        self._other_fish.append(Fish(self._main_fish.get_width()))
                         break
                     # we update the velocities of all fish every 4 seconds
                     # they change both direction and speed
