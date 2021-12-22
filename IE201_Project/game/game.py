@@ -34,7 +34,7 @@ class MainFish:
         self._main_fish_rect = self._main_fish.get_rect(center=(650, 300))
         self._vel_x = 0
         self._vel_y = 0
-        self._acceleration = 0.7
+        self._acceleration = 0.5
 
     def get_width(self):
         return self._main_fish_rect.width
@@ -55,13 +55,13 @@ class MainFish:
         return self._vel_x
 
     def control_main_fish(self, type):
-        if type == "l":
+        if type == "l" and abs(self._vel_x - self._acceleration) < (500 / self.get_width()):
             self._vel_x -= self._acceleration
-        if type == "r":
+        if type == "r" and (self._vel_x + self._acceleration) < (500 / self.get_width()):
             self._vel_x += self._acceleration
-        if type == "d":
+        if type == "d" and (self._vel_y + self._acceleration) < (500 / self.get_width()):
             self._vel_y += self._acceleration
-        if type == "u":
+        if type == "u" and abs(self._vel_y - self._acceleration) < (500 / self.get_width()):
             self._vel_y -= self._acceleration
 
     def move_main_fish(self):
@@ -78,6 +78,12 @@ class MainFish:
         self._main_fish_rect.width *= 1.05
         self._main_fish_rect.height = self._main_fish_rect.width*0.7
         self._main_fish = pygame.transform.scale(self._main_fish, (self._main_fish_rect.width, self._main_fish_rect.height))
+
+    def update_acceleration(self):
+        self._acceleration = 300 / (self.get_height() * self.get_width())
+
+    def update_velocity(self):
+        pass
 
 class OtherFish:
     def __init__(self, _width):
@@ -121,7 +127,6 @@ class OtherFish:
 
     def corner_horizontal(self):
         self._vel_x = -self._vel_x
-
 
 class JellyFish(SeaAnimals):
     def __init__(self):
@@ -257,11 +262,13 @@ class Game:
 
                     if fish.get_rect().left + fish.get_horizontal_velocity() < 0 or fish.get_rect().right + fish.get_horizontal_velocity() > self._width:
                         fish.corner_horizontal()
+
                     if self._main_fish.get_rect().colliderect(fish.get_rect()):
                         if (fish.get_width() * fish.get_height()) <= self._main_fish.get_width() * self._main_fish.get_height():
                             remove_list.append(fish)
                             self._score += 1
                             self._main_fish.increase_size()
+                            self._main_fish.update_acceleration()
                         else:
                             self._game_is_on = False
                             self.finish_game()
@@ -272,6 +279,7 @@ class Game:
                                 remove_list.append(fish)
                                 self._score += 1
                                 self._main_fish.increase_size()
+                                self._main_fish.update_acceleration()
                             else:
                                 self._game_is_on = False
                                 self.finish_game()
@@ -281,7 +289,7 @@ class Game:
                 for fish in remove_list:
                     self._other_fish.remove(fish)
                     del fish
-
+                self._main_fish.update_velocity()
                 self._screen.blit(self._main_fish.get_image(), self._main_fish.get_rect())
             else:
                 text = self._font_game_over.render("GAME IS OVER", True, (255, 255, 255))
