@@ -41,12 +41,6 @@ class Fish:
     def corner_horizontal(self):
         self._vel_x = -self._vel_x
 
-
-class SeaAnimals:
-    def __init__(self):
-        pass
-
-
 class Obstacles:
     def __init__(self):
         pass
@@ -115,9 +109,9 @@ class JellyFish(Fish):
         self._vel_x = 0
         self._vel_y = random.uniform(3, 8)
 
-class Octapus(SeaAnimals):
+class Octapus(Fish):
     def __init__(self):
-        super(Octapus, self).__init__()
+        super(Octapus, self).__init__(_width=40)
         pass
 
 
