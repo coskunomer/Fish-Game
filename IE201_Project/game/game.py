@@ -1,7 +1,6 @@
 import random
 import pygame
 import sys
-import time
 pygame.init()
 
 class Fish:
@@ -82,8 +81,9 @@ class MainFish:
     def update_acceleration(self):
         self._acceleration = 300 / (self.get_height() * self.get_width())
 
-    def update_velocity(self):
+    def decelerate(self):
         pass
+
 
 class OtherFish:
     def __init__(self, _width):
@@ -128,10 +128,38 @@ class OtherFish:
     def corner_horizontal(self):
         self._vel_x = -self._vel_x
 
-class JellyFish(SeaAnimals):
+class JellyFish():
     def __init__(self):
-        super(JellyFish, self).__init__()
-        pass
+        #super(JellyFish, self).__init__()
+        self._width = 40
+        self._height = 80
+        self._jelly_fish = pygame.image.load("game_assets/jellyfish/jellyfish.jpg")
+        self._jelly_fish = pygame.transform.scale(self._jelly_fish, (self._width, self._height))
+        self._jelly_fish_rect = self._jelly_fish.get_rect(topleft=(random.uniform(100, 600), random.choice([1, 509])))
+        self._vel_x = 0
+        self._vel_y = random.uniform(3, 8)
+
+    def move(self):
+        self._jelly_fish_rect.x += self._vel_x
+        self._jelly_fish_rect.y += self._vel_y
+
+    def corner_vertical(self):
+        self._vel_y = -self._vel_y
+
+    def corner_horizontal(self):
+        self._vel_x = -self._vel_x
+
+    def get_image(self):
+        return self._jelly_fish
+
+    def get_rect(self):
+        return self._jelly_fish_rect
+
+    def get_vertical_velocity(self):
+        return self._vel_y
+
+    def get_horizontal_velocity(self):
+        return self._vel_x
 
 
 class Octapus(SeaAnimals):
@@ -165,8 +193,18 @@ class SizeBooster(Booster):
 
 
 class UserInput:
-    def __init__(self):
-        pass
+    def __init__(self, key_input, main_fish):
+        self._key_input = key_input
+        self._main_fish = main_fish
+        if key_input[pygame.K_LEFT]:
+            self._main_fish.control_main_fish("l")
+        if key_input[pygame.K_UP]:
+            self._main_fish.control_main_fish("u")
+        if key_input[pygame.K_RIGHT]:
+            self._main_fish.control_main_fish("r")
+        if key_input[pygame.K_DOWN]:
+            self._main_fish.control_main_fish("d")
+
 
 
 class Game:
@@ -182,7 +220,6 @@ class Game:
         self._font_score = pygame.font.SysFont("monospace", 25)
         self._font_game_over = pygame.font.SysFont("monospace", 70)
         self._font_restart = pygame.font.SysFont("monospace", 40)
-        self._game_is_on = True
 
         # self._other_fish = OtherFish()
         # self._jellyfish = JellyFish()
@@ -214,6 +251,9 @@ class Game:
     def run_game(self):
         clock = pygame.time.Clock()
         game_time = 0
+        obstacle_time = 0
+        game_is_on = True
+        jelly_is_on = False
         start = True
         while True:
             self.start_game(start)
@@ -222,10 +262,20 @@ class Game:
             self._screen.blit(self._background, (0, 0))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT: sys.exit()
-            if self._game_is_on:
+            if game_is_on:
                 scoretext = self._font_score.render("SCORE : " + str(self._score), True, (255, 255, 255))
                 self._screen.blit(scoretext, (1100, 50))
                 game_time += clock.get_time()
+                obstacle_time += clock.get_time()
+                if obstacle_time >= 5000 and jelly_is_on == False:
+                    obstacle_time = 0
+                    while True:
+                        self._jelly_fish = JellyFish()
+                        if self._main_fish.get_rect().colliderect(self._jelly_fish.get_rect()):
+                            del fish
+                            continue
+                        jelly_is_on = True
+                        break
                 if game_time >= 4000:
                     game_time = 0
                     while True:
@@ -239,14 +289,7 @@ class Game:
                         fish.update_velocity()
                 clock.tick(100)
                 key_input = pygame.key.get_pressed()
-                if key_input[pygame.K_LEFT]:
-                    self._main_fish.control_main_fish("l")
-                if key_input[pygame.K_UP]:
-                    self._main_fish.control_main_fish("u")
-                if key_input[pygame.K_RIGHT]:
-                    self._main_fish.control_main_fish("r")
-                if key_input[pygame.K_DOWN]:
-                    self._main_fish.control_main_fish("d")
+                UserInput(key_input, self._main_fish)
 
                 if self._main_fish.get_rect().top + self._main_fish.get_vertical_velocity() < 0 or self._main_fish.get_rect().bottom + self._main_fish.get_vertical_velocity() > self._height:
                     self._main_fish.corner_vertical()
@@ -254,8 +297,25 @@ class Game:
                 if self._main_fish.get_rect().left + self._main_fish.get_horizontal_velocity() < 0 or self._main_fish.get_rect().right + self._main_fish.get_horizontal_velocity() > self._width:
                     self._main_fish.corner_horizontal()
 
+                if jelly_is_on:
+                    if self._jelly_fish.get_rect().top + self._jelly_fish.get_vertical_velocity() < 0 or self._jelly_fish.get_rect().bottom + self._jelly_fish.get_vertical_velocity() > self._height:
+                        self._jelly_fish.corner_vertical()
+
+                    if self._jelly_fish.get_rect().left + self._jelly_fish.get_horizontal_velocity() < 0 or self._jelly_fish.get_rect().right + self._jelly_fish.get_horizontal_velocity() > self._width:
+                        self._jelly_fish.corner_horizontal()
+
+                    if self._main_fish.get_rect().colliderect(self._jelly_fish.get_rect()):
+                        ##game_is_on, obstacle_time = self._main_fish.collide(self._jelly_fish, type="jelly fish", game_is_on=game_is_on, jelly_is_on=jelly_is_on, obstacle_time=obstacle_time):
+                        game_is_on = False
+                        jelly_is_on = False
+                        del self._jelly_fish
+                        obstacle_time = 0
+                        self.finish_game()
+
                 self._main_fish.move_main_fish()
+                if jelly_is_on: self._jelly_fish.move()
                 remove_list = []
+                # other fish and main fish movements
                 for fish in self._other_fish:
                     if fish.get_rect().top + fish.get_vertical_velocity() < 0 or fish.get_rect().bottom + fish.get_vertical_velocity() > self._height:
                         fish.corner_vertical()
@@ -270,7 +330,12 @@ class Game:
                             self._main_fish.increase_size()
                             self._main_fish.update_acceleration()
                         else:
-                            self._game_is_on = False
+                            game_is_on = False
+                            if jelly_is_on:
+                                jelly_is_on = False
+                                del self._jelly_fish
+                            obstacle_time = 0
+                            game_is_on = False
                             self.finish_game()
                     else:
                         fish.move_fish()
@@ -281,7 +346,11 @@ class Game:
                                 self._main_fish.increase_size()
                                 self._main_fish.update_acceleration()
                             else:
-                                self._game_is_on = False
+                                if jelly_is_on:
+                                    jelly_is_on = False
+                                    del self._jelly_fish
+                                obstacle_time = 0
+                                game_is_on = False
                                 self.finish_game()
                         else:
                             self._screen.blit(fish.get_image(), fish.get_rect())
@@ -289,17 +358,18 @@ class Game:
                 for fish in remove_list:
                     self._other_fish.remove(fish)
                     del fish
-                self._main_fish.update_velocity()
+                self._main_fish.decelerate()
                 self._screen.blit(self._main_fish.get_image(), self._main_fish.get_rect())
+                if jelly_is_on: self._screen.blit(self._jelly_fish.get_image(), self._jelly_fish.get_rect())
             else:
-                text = self._font_game_over.render("GAME IS OVER", True, (255, 255, 255))
+                text = self._font_game_over.render("GAME OVER", True, (255, 255, 255))
                 self._screen.blit(text, (420, 200))
                 restart = self._font_restart.render("PRESS R TO RESTART", True, (255, 255, 255))
                 self._screen.blit(restart, (460, 300))
                 key_input = pygame.key.get_pressed()
                 if key_input[pygame.K_r]:
                     start = True
-                    self._game_is_on = True
+                    game_is_on = True
             pygame.display.flip()
             pygame.display.update()
 
