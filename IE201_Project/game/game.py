@@ -256,47 +256,74 @@ class Game:
         jelly_is_on = False
         start = True
         while True:
+            # initialize the game by calling the start_game function if the game is not over
             self.start_game(start)
+            # set the start parameter to False since the game has already started
             start = False
+            # set up the screen and background
             self._screen.fill("White")
             self._screen.blit(self._background, (0, 0))
+            # check if the player clicked quit button
             for event in pygame.event.get():
                 if event.type == pygame.QUIT: sys.exit()
+            # check if the game is live, continue if so
             if game_is_on:
+                # scoretext is our live score that we display on the screen
                 scoretext = self._font_score.render("SCORE : " + str(self._score), True, (255, 255, 255))
                 self._screen.blit(scoretext, (1100, 50))
+                # measure the time elapsed
                 game_time += clock.get_time()
+                # we control our objects by their screen time
                 obstacle_time += clock.get_time()
                 if obstacle_time >= 5000 and jelly_is_on == False:
                     obstacle_time = 0
+                    # add the jelly fish on the screen
+                    # it will be added from either top of the bottom of the screen
+                    # it's location on the x axis is assigned randomly therefore
+                    # we check in case it collides with our main fish
+                    # if so we don't initialize the jellyfish and continue on random assignment
                     while True:
                         self._jelly_fish = JellyFish()
                         if self._main_fish.get_rect().colliderect(self._jelly_fish.get_rect()):
                             del fish
                             continue
+                        # when the jelly fish is created, the parameter "jelly_is_on" becomes True
                         jelly_is_on = True
                         break
+                # we add a fish to the game every 4 seconds
                 if game_time >= 4000:
                     game_time = 0
                     while True:
                         fish = OtherFish(self._main_fish.get_width())
+                        # we again check if it collides with our fish
                         if self._main_fish.get_rect().colliderect(fish.get_rect()):
                             del fish
                             continue
                         self._other_fish.append(OtherFish(self._main_fish.get_width()))
                         break
+                    # we update the velocities of all fish every 4 seconds
+                    # they change both direction and speed
                     for fish in self._other_fish:
                         fish.update_velocity()
-                clock.tick(100)
+                # our constant fps
+                clock.tick(30)
+                # taking the user input below
+                # user controls the main fish
                 key_input = pygame.key.get_pressed()
                 UserInput(key_input, self._main_fish)
 
+                # we check if the our fish reaches the top or bottom of the screen
+                # we update the velocity related
                 if self._main_fish.get_rect().top + self._main_fish.get_vertical_velocity() < 0 or self._main_fish.get_rect().bottom + self._main_fish.get_vertical_velocity() > self._height:
                     self._main_fish.corner_vertical()
 
+                # we check if the our fish reaches the leftmost or rightmost of the screen
+                # we update the velocity related
                 if self._main_fish.get_rect().left + self._main_fish.get_horizontal_velocity() < 0 or self._main_fish.get_rect().right + self._main_fish.get_horizontal_velocity() > self._width:
                     self._main_fish.corner_horizontal()
 
+                # if jelly is on the screen we check if it's on the edges of the screen
+                # if so we update the velocity
                 if jelly_is_on:
                     if self._jelly_fish.get_rect().top + self._jelly_fish.get_vertical_velocity() < 0 or self._jelly_fish.get_rect().bottom + self._jelly_fish.get_vertical_velocity() > self._height:
                         self._jelly_fish.corner_vertical()
@@ -304,41 +331,56 @@ class Game:
                     if self._jelly_fish.get_rect().left + self._jelly_fish.get_horizontal_velocity() < 0 or self._jelly_fish.get_rect().right + self._jelly_fish.get_horizontal_velocity() > self._width:
                         self._jelly_fish.corner_horizontal()
 
+                    # we check if jellyfish collides with our main fish
+                    # if so, our fish dies and we update the parameters accordingly
                     if self._main_fish.get_rect().colliderect(self._jelly_fish.get_rect()):
-                        ##game_is_on, obstacle_time = self._main_fish.collide(self._jelly_fish, type="jelly fish", game_is_on=game_is_on, jelly_is_on=jelly_is_on, obstacle_time=obstacle_time):
                         game_is_on = False
                         jelly_is_on = False
                         del self._jelly_fish
                         obstacle_time = 0
                         self.finish_game()
 
+                # we move our main fish
                 self._main_fish.move_main_fish()
+                # we move our jellyfish if it is on the screen
                 if jelly_is_on: self._jelly_fish.move()
+                # the list of fish that we eat, they will be removed mfrom the game at the end of the while loop
                 remove_list = []
                 # other fish and main fish movements
                 for fish in self._other_fish:
+                    # we check if fish are on the edges of the screen
+                    # if so we update the velocity
                     if fish.get_rect().top + fish.get_vertical_velocity() < 0 or fish.get_rect().bottom + fish.get_vertical_velocity() > self._height:
                         fish.corner_vertical()
 
                     if fish.get_rect().left + fish.get_horizontal_velocity() < 0 or fish.get_rect().right + fish.get_horizontal_velocity() > self._width:
                         fish.corner_horizontal()
 
+                    # we check if the main fish collides with an other fish
                     if self._main_fish.get_rect().colliderect(fish.get_rect()):
+                        # if so, if the size of our fish is bigger, we eat the fish
+                        # we increase the game score and the size of our fish increases accordingly
+                        # main fish gets slower as its size increases
                         if (fish.get_width() * fish.get_height()) <= self._main_fish.get_width() * self._main_fish.get_height():
                             remove_list.append(fish)
                             self._score += 1
                             self._main_fish.increase_size()
                             self._main_fish.update_acceleration()
+                        # otherwise our fish gets eaten and the game ends
+                        # we update the parameters accordingly
                         else:
-                            game_is_on = False
                             if jelly_is_on:
                                 jelly_is_on = False
                                 del self._jelly_fish
                             obstacle_time = 0
                             game_is_on = False
                             self.finish_game()
+                    # if our fish doesn't collide, game continues as usual
                     else:
+                        # move the fish
                         fish.move_fish()
+                        # check again if they collide
+                        # functions are the same as above
                         if self._main_fish.get_rect().colliderect(fish.get_rect()):
                             if (fish.get_width()*fish.get_height()) <= self._main_fish.get_width()*self._main_fish.get_height():
                                 remove_list.append(fish)
@@ -352,24 +394,31 @@ class Game:
                                 obstacle_time = 0
                                 game_is_on = False
                                 self.finish_game()
+                        # put the fish on the screen if there is no collision
                         else:
                             self._screen.blit(fish.get_image(), fish.get_rect())
 
+                # remove the fish that are eaten by our fish from the game
                 for fish in remove_list:
                     self._other_fish.remove(fish)
                     del fish
+                # our fish gets slower if player doesn't move our fish
                 self._main_fish.decelerate()
+                # we draw our fish on the screen
                 self._screen.blit(self._main_fish.get_image(), self._main_fish.get_rect())
                 if jelly_is_on: self._screen.blit(self._jelly_fish.get_image(), self._jelly_fish.get_rect())
+            # if the game is over, we display a screen that says game is over
             else:
                 text = self._font_game_over.render("GAME OVER", True, (255, 255, 255))
                 self._screen.blit(text, (420, 200))
                 restart = self._font_restart.render("PRESS R TO RESTART", True, (255, 255, 255))
                 self._screen.blit(restart, (460, 300))
+                # if the player presses "R" we restart the game again
                 key_input = pygame.key.get_pressed()
                 if key_input[pygame.K_r]:
                     start = True
                     game_is_on = True
+            # update the display
             pygame.display.flip()
             pygame.display.update()
 
