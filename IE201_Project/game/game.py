@@ -31,11 +31,7 @@ class Fish:
     def get_horizontal_velocity(self):
         return self._vel_x
 
-    def update_velocity(self):
-        self._vel_x = random.uniform(-5, 5)
-        self._vel_y = random.uniform(-3, 3)
-
-    def move_fish(self):
+    def move(self):
         self._fish_rect.x += self._vel_x
         self._fish_rect.y += self._vel_y
 
@@ -83,10 +79,6 @@ class MainFish(Fish):
         if type == "u" and abs(self._vel_y - self._acceleration) < (500 / self.get_width()):
             self._vel_y -= self._acceleration
 
-    def move_main_fish(self):
-        self._fish_rect.x += self._vel_x
-        self._fish_rect.y += self._vel_y
-
     def corner_vertical(self):
         self._vel_y = 0
 
@@ -104,6 +96,14 @@ class MainFish(Fish):
     def decelerate(self):
         pass
 
+class OtherFish(Fish):
+    def __init__(self, _width):
+        super(OtherFish, self).__init__(_width)
+
+    def update_velocity(self):
+        self._vel_x = random.uniform(-5, 5)
+        self._vel_y = random.uniform(-3, 3)
+
 class JellyFish(Fish):
     def __init__(self):
         super(JellyFish, self).__init__(_width=40)
@@ -114,17 +114,6 @@ class JellyFish(Fish):
         self._fish_rect = self._fish.get_rect(topleft=(random.uniform(100, 600), random.choice([1, 509])))
         self._vel_x = 0
         self._vel_y = random.uniform(3, 8)
-
-    def move(self):
-        self._fish_rect.x += self._vel_x
-        self._fish_rect.y += self._vel_y
-
-    def corner_vertical(self):
-        self._vel_y = -self._vel_y
-
-    def corner_horizontal(self):
-        self._vel_x = -self._vel_x
-
 
 class Octapus(SeaAnimals):
     def __init__(self):
@@ -199,11 +188,11 @@ class Game:
         self._main_fish = MainFish()
         for i in range(5):
             while True:
-                fish = Fish(self._main_fish.get_width())
+                fish = OtherFish(self._main_fish.get_width())
                 if self._main_fish.get_rect().colliderect(fish.get_rect()):
                     del fish
                     continue
-                self._other_fish.append(Fish(self._main_fish.get_width()))
+                self._other_fish.append(OtherFish(self._main_fish.get_width()))
                 break
 
     def finish_game(self):
@@ -258,12 +247,12 @@ class Game:
                 if game_time >= 4000:
                     game_time = 0
                     while True:
-                        fish = Fish(self._main_fish.get_width())
+                        fish = OtherFish(self._main_fish.get_width())
                         # we again check if it collides with our fish
                         if self._main_fish.get_rect().colliderect(fish.get_rect()):
                             del fish
                             continue
-                        self._other_fish.append(Fish(self._main_fish.get_width()))
+                        self._other_fish.append(OtherFish(self._main_fish.get_width()))
                         break
                     # we update the velocities of all fish every 4 seconds
                     # they change both direction and speed
@@ -305,7 +294,7 @@ class Game:
                         self.finish_game()
 
                 # we move our main fish
-                self._main_fish.move_main_fish()
+                self._main_fish.move()
                 # we move our jellyfish if it is on the screen
                 if jelly_is_on: self._jelly_fish.move()
                 # the list of fish that we eat, they will be removed mfrom the game at the end of the while loop
@@ -342,7 +331,7 @@ class Game:
                     # if our fish doesn't collide, game continues as usual
                     else:
                         # move the fish
-                        fish.move_fish()
+                        fish.move()
                         # check again if they collide
                         # functions are the same as above
                         if self._main_fish.get_rect().colliderect(fish.get_rect()):
