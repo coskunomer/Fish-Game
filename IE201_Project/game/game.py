@@ -5,7 +5,7 @@ pygame.init()
 
 class Fish:
     def __init__(self, _width):
-        self._width = random.uniform(_width * 0.5, _width * 1.3)
+        self._width = random.uniform(_width*0.5, _width*1.25)
         self._height = self._width * 0.75
         self._fish = pygame.image.load("game_assets/fish_images/other_fish.png")
         self._fish = pygame.transform.scale(self._fish, (self._width, self._height))
@@ -14,10 +14,10 @@ class Fish:
         self._vel_y = random.uniform(-3, 3)
 
     def get_width(self):
-        return self._width
+        return self._fish_rect.width
 
     def get_height(self):
-        return self._height
+        return self._fish_rect.height
 
     def get_image(self):
         return self._fish
@@ -85,7 +85,7 @@ class MainFish(Fish):
         self._fish = pygame.transform.scale(self._fish, (self._fish_rect.width, self._fish_rect.height))
 
     def update_acceleration(self):
-        self._acceleration = 300 / (self.get_height() * self.get_width())
+        self._acceleration = max(0.05, 300 / (self.get_height() * self.get_width()))
 
     def decelerate(self):
         pass
@@ -105,14 +105,20 @@ class JellyFish(Fish):
         self._height = 80
         self._fish = pygame.image.load("game_assets/jellyfish/jellyfish.jpg")
         self._fish = pygame.transform.scale(self._fish, (self._width, self._height))
-        self._fish_rect = self._fish.get_rect(topleft=(random.uniform(100, 600), random.choice([1, 509])))
+        self._fish_rect = self._fish.get_rect(topleft=(random.uniform(100, 1200), random.choice([1, 509])))
         self._vel_x = 0
         self._vel_y = random.uniform(3, 8)
 
 class Octapus(Fish):
     def __init__(self):
         super(Octapus, self).__init__(_width=40)
-        pass
+        self._width = 60
+        self._height = 60
+        self._fish = pygame.image.load("game_assets/octopus/octopus.jpg")
+        self._fish = pygame.transform.scale(self._fish, (self._width, self._height))
+        self._fish_rect = self._fish.get_rect(topleft=(random.uniform(100, 1200), random.choice([1, 509])))
+        self._vel_x = 0
+        self._vel_y = random.uniform(3, 8)
 
 
 class FishingNet(Obstacles):
@@ -201,6 +207,7 @@ class Game:
         obstacle_time = 0
         game_is_on = True
         jelly_is_on = False
+        octopus_is_on = False
         start = True
         while True:
             # initialize the game by calling the start_game function if the game is not over
@@ -220,10 +227,7 @@ class Game:
                 self._screen.blit(scoretext, (1100, 50))
                 # measure the time elapsed
                 game_time += clock.get_time()
-                # we control our objects by their screen time
-                obstacle_time += clock.get_time()
-                if obstacle_time >= 5000 and jelly_is_on == False:
-                    obstacle_time = 0
+                if self._score == 10 and jelly_is_on == False:
                     # add the jelly fish on the screen
                     # it will be added from either top of the bottom of the screen
                     # it's location on the x axis is assigned randomly therefore
@@ -231,11 +235,27 @@ class Game:
                     # if so we don't initialize the jellyfish and continue on random assignment
                     while True:
                         self._jelly_fish = JellyFish()
+
                         if self._main_fish.get_rect().colliderect(self._jelly_fish.get_rect()):
-                            del fish
+                            del self._jelly_fish
                             continue
-                        # when the jelly fish is created, the parameter "jelly_is_on" becomes True
+                        # when the jelly fish is created, the parameter "sea_animal_is_on" becomes True
                         jelly_is_on = True
+                        break
+                if self._score == 15 and octopus_is_on == False:
+                    # add the jelly fish on the screen
+                    # it will be added from either top of the bottom of the screen
+                    # it's location on the x axis is assigned randomly therefore
+                    # we check in case it collides with our main fish
+                    # if so we don't initialize the jellyfish and continue on random assignment
+                    while True:
+                        self._octopus = Octapus()
+
+                        if self._main_fish.get_rect().colliderect(self._octopus.get_rect()):
+                            del self._octopus
+                            continue
+                        # when the jelly fish is created, the parameter "sea_animal_is_on" becomes True
+                        octopus_is_on = True
                         break
                 # we add a fish to the game every 4 seconds
                 if game_time >= 4000:
@@ -253,7 +273,7 @@ class Game:
                     for fish in self._other_fish:
                         fish.update_velocity()
                 # our constant fps
-                clock.tick(30)
+                clock.tick(40)
                 # taking the user input below
                 # user controls the main fish
                 key_input = pygame.key.get_pressed()
@@ -282,7 +302,22 @@ class Game:
                     # if so, our fish dies and we update the parameters accordingly
                     if self._main_fish.get_rect().colliderect(self._jelly_fish.get_rect()):
                         game_is_on = False
-                        jelly_is_on = False
+                        sea_animal_is_on = False
+                        del self._jelly_fish
+                        obstacle_time = 0
+                        self.finish_game()
+                if octopus_is_on:
+                    if self._octopus.get_rect().top + self._octopus.get_vertical_velocity() < 0 or self._octopus.get_rect().bottom + self._octopus.get_vertical_velocity() > self._height:
+                        self._octopus.corner_vertical()
+
+                    if self._octopus.get_rect().left + self._octopus.get_horizontal_velocity() < 0 or self._octopus.get_rect().right + self._octopus.get_horizontal_velocity() > self._width:
+                        self._octopus.corner_horizontal()
+
+                    # we check if jellyfish collides with our main fish
+                    # if so, our fish dies and we update the parameters accordingly
+                    if self._main_fish.get_rect().colliderect(self._octopus.get_rect()):
+                        game_is_on = False
+                        octopus_is_on = False
                         del self._jelly_fish
                         obstacle_time = 0
                         self.finish_game()
@@ -291,6 +326,7 @@ class Game:
                 self._main_fish.move()
                 # we move our jellyfish if it is on the screen
                 if jelly_is_on: self._jelly_fish.move()
+                if octopus_is_on: self._octopus.move()
                 # the list of fish that we eat, they will be removed mfrom the game at the end of the while loop
                 remove_list = []
                 # other fish and main fish movements
@@ -308,7 +344,7 @@ class Game:
                         # if so, if the size of our fish is bigger, we eat the fish
                         # we increase the game score and the size of our fish increases accordingly
                         # main fish gets slower as its size increases
-                        if (fish.get_width() * fish.get_height()) <= self._main_fish.get_width() * self._main_fish.get_height():
+                        if (fish.get_width() * fish.get_height()) <= (self._main_fish.get_width() * self._main_fish.get_height()):
                             remove_list.append(fish)
                             self._score += 1
                             self._main_fish.increase_size()
@@ -316,9 +352,15 @@ class Game:
                         # otherwise our fish gets eaten and the game ends
                         # we update the parameters accordingly
                         else:
+                            print(fish.get_width() * fish.get_height())
+                            print(self._main_fish.get_width() * self._main_fish.get_height())
                             if jelly_is_on:
                                 jelly_is_on = False
                                 del self._jelly_fish
+                            if octopus_is_on:
+                                octopus_is_on = False
+                                del self._octopus
+
                             obstacle_time = 0
                             game_is_on = False
                             self.finish_game()
@@ -335,9 +377,14 @@ class Game:
                                 self._main_fish.increase_size()
                                 self._main_fish.update_acceleration()
                             else:
+                                print(fish.get_width() * fish.get_height())
+                                print(self._main_fish.get_width() * self._main_fish.get_height())
                                 if jelly_is_on:
                                     jelly_is_on = False
                                     del self._jelly_fish
+                                if octopus_is_on:
+                                    octopus_is_on = False
+                                    del self._octopus
                                 obstacle_time = 0
                                 game_is_on = False
                                 self.finish_game()
@@ -354,6 +401,7 @@ class Game:
                 # we draw our fish on the screen
                 self._screen.blit(self._main_fish.get_image(), self._main_fish.get_rect())
                 if jelly_is_on: self._screen.blit(self._jelly_fish.get_image(), self._jelly_fish.get_rect())
+                if octopus_is_on: self._screen.blit(self._octopus.get_image(), self._octopus.get_rect())
             # if the game is over, we display a screen that says game is over
             else:
                 text = self._font_game_over.render("GAME OVER", True, (255, 255, 255))
