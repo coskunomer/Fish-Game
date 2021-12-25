@@ -31,9 +31,9 @@ class Fish:
     def get_horizontal_velocity(self):
         return self._vel_x
 
-    def move(self):
-        self._fish_rect.x += self._vel_x
-        self._fish_rect.y += self._vel_y
+    def move(self, freeze=1):
+        self._fish_rect.x += self._vel_x*freeze
+        self._fish_rect.y += self._vel_y*freeze
 
     def corner_vertical(self):
         self._vel_y = -self._vel_y
@@ -58,15 +58,15 @@ class MainFish(Fish):
         self._acceleration = 0.5
         self._boost_duration = 7000
 
-    def control_main_fish(self, type, boosted=1):
+    def control_main_fish(self, type, boosted=1, freeze=1):
         if type == "l" and abs(self._vel_x - self._acceleration) < (500 / self.get_width()):
-            self._vel_x -= self._acceleration*boosted
+            self._vel_x -= self._acceleration*boosted*freeze
         if type == "r" and (self._vel_x + self._acceleration) < (500 / self.get_width()):
-            self._vel_x += self._acceleration*boosted
+            self._vel_x += self._acceleration*boosted*freeze
         if type == "d" and (self._vel_y + self._acceleration) < (500 / self.get_width()):
-            self._vel_y += self._acceleration*boosted
+            self._vel_y += self._acceleration*boosted*freeze
         if type == "u" and abs(self._vel_y - self._acceleration) < (500 / self.get_width()):
-            self._vel_y -= self._acceleration*boosted
+            self._vel_y -= self._acceleration*boosted*freeze
 
     def corner_vertical(self):
         self._vel_y = 0
@@ -175,18 +175,18 @@ class SizeBooster(SpeedBooster):
         self._image_rect = self._image.get_rect(topleft=(random.uniform(100, 1200), random.uniform(50, 540)))
 
 class UserInput:
-    def __init__(self, key_input, main_fish, speed_boosted):
+    def __init__(self, key_input, main_fish, speed_boosted, freeze=1):
         self._key_input = key_input
         self._main_fish = main_fish
         if speed_boosted:
             if key_input[pygame.K_LEFT]:
-                self._main_fish.control_main_fish("l", boosted=4)
+                self._main_fish.control_main_fish("l", boosted=4, freeze=freeze)
             if key_input[pygame.K_UP]:
-                self._main_fish.control_main_fish("u", boosted=4)
+                self._main_fish.control_main_fish("u", boosted=4, freeze=freeze)
             if key_input[pygame.K_RIGHT]:
-                self._main_fish.control_main_fish("r", boosted=4)
+                self._main_fish.control_main_fish("r", boosted=4, freeze=freeze)
             if key_input[pygame.K_DOWN]:
-                self._main_fish.control_main_fish("d", boosted=4)
+                self._main_fish.control_main_fish("d", boosted=4, freeze=freeze)
         else:
             if key_input[pygame.K_LEFT]:
                 self._main_fish.control_main_fish("l")
@@ -247,6 +247,8 @@ class Game:
         size_booster_time = random.uniform(20000, 40000)
         speed_booster_timer = 0
         size_booster_timer = 0
+        freeze_timer = 0
+        freeze = 1
         start = True
         while True:
             # initialize the game by calling the start_game function if the game is not over
@@ -268,8 +270,13 @@ class Game:
                 game_time += clock.get_time()
                 speed_booster_timer += clock.get_time()
                 size_booster_timer += clock.get_time()
+                if freeze == 0: freeze_timer += clock.get_time()
                 if speed_boosted: speed_boosted_duration += clock.get_time()
                 if size_boosted: size_boosted_duration += clock.get_time()
+
+                if freeze_timer >= 3000:
+                    freeze_timer = 0
+                    freeze = 1
                 if speed_boosted_duration >= self._main_fish.get_boost_duration():
                     speed_boosted = False
                     speed_boosted_duration = 0
@@ -319,7 +326,7 @@ class Game:
                         size_booster_timer = 0
                         del self._size_booster
 
-                if self._score == 10 and jelly_is_on == False:
+                if self._score == 1 and jelly_is_on == False:
                     # add the jelly fish on the screen
                     # it will be added from either top of the bottom of the screen
                     # it's location on the x axis is assigned randomly therefore
@@ -369,7 +376,7 @@ class Game:
                 # taking the user input below
                 # user controls the main fish
                 key_input = pygame.key.get_pressed()
-                UserInput(key_input, self._main_fish, speed_boosted)
+                UserInput(key_input, self._main_fish, speed_boosted, freeze=freeze)
 
                 # we check if the our fish reaches the top or bottom of the screen
                 # we update the velocity related
@@ -393,19 +400,8 @@ class Game:
                     # we check if jellyfish collides with our main fish
                     # if so, our fish dies and we update the parameters accordingly
                     if self._main_fish.get_rect().colliderect(self._jelly_fish.get_rect()):
-                        game_is_on = False
-                        del self._jelly_fish
-                        if speed_booster_is_on: del self._speed_booster
-                        if size_booster_is_on: del self._size_booster
-                        size_booster_timer = 0
-                        speed_booster_timer = 0
-                        speed_booster_is_on = False
-                        size_booster_is_on = False
-                        jelly_is_on = False
-                        if octopus_is_on:
-                            octopus_is_on = False
-                            del self._octopus
-                        self.finish_game()
+                        freeze = 0
+
                 if octopus_is_on:
                     if self._octopus.get_rect().top + self._octopus.get_vertical_velocity() < 0 or self._octopus.get_rect().bottom + self._octopus.get_vertical_velocity() > self._height:
                         self._octopus.corner_vertical()
@@ -447,7 +443,7 @@ class Game:
 
 
                 # we move our main fish
-                self._main_fish.move()
+                self._main_fish.move(freeze)
                 # we move our jellyfish if it is on the screen
                 if jelly_is_on: self._jelly_fish.move()
                 if octopus_is_on: self._octopus.move()
