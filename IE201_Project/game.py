@@ -43,7 +43,23 @@ class Fish:
 
 class Obstacles:
     def __init__(self):
-        pass
+        self._width = 20
+        self._height = 100
+        self._obstacle = pygame.image.load("game_assets/obstacles/fishing_rod/fishing_rod.jpg")
+        self._obstacle = pygame.transform.scale(self._obstacle, (self._width, self._height))
+        self._obstacle_rect = self._obstacle.get_rect(topleft=(random.uniform(50, 1250), 0))
+
+    def get_width(self):
+        return self._obstacle_rect.width
+
+    def get_height(self):
+        return self._obstacle_rect.height
+
+    def get_image(self):
+        return self._obstacle
+
+    def get_rect(self):
+        return self._obstacle_rect
 
 class MainFish(Fish):
     def __init__(self):
@@ -132,13 +148,16 @@ class Octapus(Fish):
 class FishingNet(Obstacles):
     def __init__(self):
         super(FishingNet, self).__init__()
-        pass
-
+        self._width = 100
+        self._height = 30
+        self._obstacle = pygame.image.load("game_assets/obstacles/fishing_net/fishing_net.png")
+        self._obstacle = pygame.transform.scale(self._obstacle, (self._width, self._height))
+        self._obstacle_rect = self._obstacle.get_rect(topleft=(random.uniform(50, 1250), 0))
 
 class FishingRod(Obstacles):
     def __init__(self):
         super(FishingRod, self).__init__()
-        pass
+
 
 
 class SpeedBooster():
@@ -250,6 +269,8 @@ class Game:
         freeze_timer = 0
         freeze = 1
         start = True
+        rod = FishingRod()
+        net = FishingNet()
         while True:
             # initialize the game by calling the start_game function if the game is not over
             self.start_game(start)
@@ -326,7 +347,7 @@ class Game:
                         size_booster_timer = 0
                         del self._size_booster
 
-                if self._score == 1 and jelly_is_on == False:
+                if self._score == 10 and jelly_is_on == False:
                     # add the jelly fish on the screen
                     # it will be added from either top of the bottom of the screen
                     # it's location on the x axis is assigned randomly therefore
@@ -528,6 +549,8 @@ class Game:
                 self._main_fish.decelerate()
                 # we draw our fish on the screen
                 self._screen.blit(self._main_fish.get_image(), self._main_fish.get_rect())
+                self._screen.blit(rod.get_image(), rod.get_rect())
+                self._screen.blit(net.get_image(), net.get_rect())
                 if jelly_is_on: self._screen.blit(self._jelly_fish.get_image(), self._jelly_fish.get_rect())
                 if octopus_is_on: self._screen.blit(self._octopus.get_image(), self._octopus.get_rect())
                 if speed_booster_is_on: self._screen.blit(self._speed_booster.get_image(), self._speed_booster.get_rect())
