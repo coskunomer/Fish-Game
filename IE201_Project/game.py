@@ -45,12 +45,6 @@ class Obstacles:
     def __init__(self):
         pass
 
-
-class Booster:
-    def __init__(self):
-        pass
-
-
 class MainFish(Fish):
     def __init__(self):
         super(MainFish, self).__init__(_width=30)
@@ -62,7 +56,7 @@ class MainFish(Fish):
         self._vel_x = 0
         self._vel_y = 0
         self._acceleration = 0.5
-        self._boost_duration = 5000
+        self._boost_duration = 7000
 
     def control_main_fish(self, type, boosted=1):
         if type == "l" and abs(self._vel_x - self._acceleration) < (500 / self.get_width()):
@@ -91,11 +85,15 @@ class MainFish(Fish):
     def decelerate(self):
         pass
 
-    def get_boosted_acceleration(self):
-        return self._acceleration * 3
+    def boost_size(self):
+        self._fish_rect.width += 10
+        self._fish_rect.height = self._fish_rect.width * 2 / 3
+        self._fish = pygame.transform.scale(self._fish, (self._fish_rect.width, self._fish_rect.height))
 
-    def get_boosted_size(self):
-        return (self._width*1.5, self._height*1.5)
+    def reboost_size(self):
+        self._fish_rect.width -= 10
+        self._fish_rect.height = self._fish_rect.width * 2 / 3
+        self._fish = pygame.transform.scale(self._fish, (self._fish_rect.width, self._fish_rect.height))
 
     def get_boost_duration(self):
         return self._boost_duration
@@ -169,31 +167,12 @@ class SpeedBooster():
         return self._duration
 
 
-class SizeBooster():
+class SizeBooster(SpeedBooster):
     def __init__(self):
-        # super(SpeedBooster, self).__init__()
-        self._width = 40
-        self._height = 40
-        self._duration = random.uniform(5000, 10000)
+        super(SizeBooster, self).__init__()
         self._image = pygame.image.load("game_assets/boosters/size_booster.png")
         self._image = pygame.transform.scale(self._image, (self._width, self._height))
         self._image_rect = self._image.get_rect(topleft=(random.uniform(100, 1200), random.uniform(50, 540)))
-
-    def get_width(self):
-        return self._image_rect.width
-
-    def get_height(self):
-        return self._image_rect.height
-
-    def get_image(self):
-        return self._image
-
-    def get_rect(self):
-        return self._image_rect
-
-    def get_duration(self):
-        return self._duration
-
 
 class UserInput:
     def __init__(self, key_input, main_fish, speed_boosted):
@@ -265,7 +244,7 @@ class Game:
         speed_boosted_duration = 0
         size_boosted_duration = 0
         speed_booster_time = random.uniform(20000, 40000)
-        size_booster_time = random.uniform(200, 400)
+        size_booster_time = random.uniform(20000, 40000)
         speed_booster_timer = 0
         size_booster_timer = 0
         start = True
@@ -295,6 +274,7 @@ class Game:
                     speed_boosted = False
                     speed_boosted_duration = 0
                 if size_boosted_duration >= self._main_fish.get_boost_duration():
+                    self._main_fish.reboost_size()
                     size_boosted = False
                     size_boosted_duration = 0
 
@@ -421,6 +401,7 @@ class Game:
                         speed_booster_timer = 0
                         speed_booster_is_on = False
                         size_booster_is_on = False
+                        jelly_is_on = False
                         if octopus_is_on:
                             octopus_is_on = False
                             del self._octopus
@@ -457,6 +438,7 @@ class Game:
 
                 if size_booster_is_on:
                     if self._main_fish.get_rect().colliderect(self._size_booster.get_rect()):
+                        self._main_fish.boost_size()
                         size_boosted = True
                         size_booster_is_on = False
                         del self._size_booster
@@ -494,8 +476,12 @@ class Game:
                         # otherwise our fish gets eaten and the game ends
                         # we update the parameters accordingly
                         else:
-                            print(fish.get_width() * fish.get_height())
-                            print(self._main_fish.get_width() * self._main_fish.get_height())
+                            if speed_booster_is_on: del self._speed_booster
+                            if size_booster_is_on: del self._size_booster
+                            size_booster_timer = 0
+                            speed_booster_timer = 0
+                            speed_booster_is_on = False
+                            size_booster_is_on = False
                             if jelly_is_on:
                                 jelly_is_on = False
                                 del self._jelly_fish
@@ -519,8 +505,12 @@ class Game:
                                 self._main_fish.increase_size()
                                 self._main_fish.update_acceleration()
                             else:
-                                print(fish.get_width() * fish.get_height())
-                                print(self._main_fish.get_width() * self._main_fish.get_height())
+                                if speed_booster_is_on: del self._speed_booster
+                                if size_booster_is_on: del self._size_booster
+                                size_booster_timer = 0
+                                speed_booster_timer = 0
+                                speed_booster_is_on = False
+                                size_booster_is_on = False
                                 if jelly_is_on:
                                     jelly_is_on = False
                                     del self._jelly_fish
