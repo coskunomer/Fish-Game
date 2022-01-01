@@ -44,10 +44,11 @@ class Fish:
 class Obstacles:
     def __init__(self):
         self._width = 20
-        self._height = 100
+        self._height = 200
+        self._duration = random.uniform(20000, 40000)
         self._obstacle = pygame.image.load("game_assets/obstacles/fishing_rod/fishing_rod.jpg")
         self._obstacle = pygame.transform.scale(self._obstacle, (self._width, self._height))
-        self._obstacle_rect = self._obstacle.get_rect(topleft=(random.uniform(50, 1250), 0))
+        self._obstacle_rect = self._obstacle.get_rect(topleft=(random.uniform(50, 1200), -200))
 
     def get_width(self):
         return self._obstacle_rect.width
@@ -60,6 +61,17 @@ class Obstacles:
 
     def get_rect(self):
         return self._obstacle_rect
+
+    def get_duration(self):
+        return self._duration
+
+    def move(self, timer):
+        if timer > self.get_duration():
+            self._obstacle_rect.y -= 1
+        else:
+            if self.get_rect().y < 0:
+                self.get_rect().y += 0.3
+
 
 class MainFish(Fish):
     def __init__(self):
@@ -148,21 +160,18 @@ class Octapus(Fish):
 class FishingNet(Obstacles):
     def __init__(self):
         super(FishingNet, self).__init__()
-        self._width = 100
-        self._height = 30
+        self._width = 300
+        self._height = 90
         self._obstacle = pygame.image.load("game_assets/obstacles/fishing_net/fishing_net.png")
         self._obstacle = pygame.transform.scale(self._obstacle, (self._width, self._height))
-        self._obstacle_rect = self._obstacle.get_rect(topleft=(random.uniform(50, 1250), 0))
+        self._obstacle_rect = self._obstacle.get_rect(topleft=(random.uniform(30, 1000), -90))
 
 class FishingRod(Obstacles):
     def __init__(self):
         super(FishingRod, self).__init__()
 
-
-
 class SpeedBooster():
     def __init__(self):
-        #super(SpeedBooster, self).__init__()
         self._width = 40
         self._height = 40
         self._duration = random.uniform(5000, 10000)
@@ -225,12 +234,41 @@ class Game:
         self._screen = pygame.display.set_mode((self._width, self._height))
         self._background = pygame.image.load("game_assets/background/background.jpg").convert()
         self._background = pygame.transform.scale(self._background, (self._width, self._height))
-        self._main_fish = MainFish()
         self._other_fish = []
         self._score = 0
         self._font_score = pygame.font.SysFont("monospace", 25)
         self._font_game_over = pygame.font.SysFont("monospace", 70)
         self._font_restart = pygame.font.SysFont("monospace", 40)
+        self._clock = pygame.time.Clock()
+        self._game_time = 0
+        self._game_is_on = True
+        self._jelly_is_on = False
+        self._octopus_is_on = False
+        self._speed_booster_is_on = False
+        self._size_booster_is_on = False
+        self._speed_boosted = False
+        self._size_boosted = False
+        self._speed_boosted_duration = 0
+        self._size_boosted_duration = 0
+        self._speed_booster_time = random.uniform(20000, 40000)
+        self._size_booster_time = random.uniform(20000, 40000)
+        self._speed_booster_timer = 0
+        self._size_booster_timer = 0
+        self._freeze_timer = 0
+        self._freeze = 1
+        self._start = True
+        self._rod_timer = 0
+        self._net_timer = 0
+        self._rod_is_on = False
+        self._net_is_on = False
+        self._rod_time = random.uniform(20000, 40000)
+        self._net_time = random.uniform(20000, 40000)
+        self._size_booster = None
+        self._speed_booster = None
+        self._jelly_fish = None
+        self._octopus = None
+        self._net = None
+        self._rod = None
 
     def start_game(self, start):
         if start == False: return 0
@@ -245,37 +283,69 @@ class Game:
                 break
 
     def finish_game(self):
+        self._game_is_on = False
+        self._game_time = 0
+        self._jelly_is_on = False
+        self._octopus_is_on = False
+        self._speed_booster_is_on = False
+        self._size_booster_is_on = False
+        self._speed_boosted = False
+        self._size_boosted = False
+        self._speed_boosted_duration = 0
+        self._size_boosted_duration = 0
+        self._speed_booster_time = random.uniform(20000, 40000)
+        self._size_booster_time = random.uniform(20000, 40000)
+        self._speed_booster_timer = 0
+        self._size_booster_timer = 0
+        self._freeze_timer = 0
+        self._freeze = 1
+        self._rod_timer = 0
+        self._net_timer = 0
+        self._rod_is_on = False
+        self._net_is_on = False
+        self._rod_time = random.uniform(20000, 40000)
+        self._net_time = random.uniform(20000, 40000)
+        self._score = 0
         for fish in self._other_fish:
             del fish
         self._other_fish = []
-        self._score = 0
+        if self._speed_booster_is_on: del self._speed_booster
+        if self._size_booster_is_on: del self._size_booster
+        if self._jelly_is_on:
+            self._jelly_is_on = False
+            del self._jelly_fish
+        if self._octopus_is_on:
+            self._octopus_is_on = False
+            del self._octopus
+        if self._net_is_on:
+            del self._net
+            self._net_is_on = False
+        if self._rod_is_on:
+            del self._rod
+            self._rod_is_on = False
+        self._size_booster = None
+        self._speed_booster = None
+        self._jelly_fish = None
+        self._octopus = None
+        self._net = None
+        self._rod = None
+
+    def update_timers(self, time):
+        self._game_time += time
+        self._speed_booster_timer += time
+        self._size_booster_timer += time
+        self._rod_timer += time
+        self._net_timer += time
+        if self._freeze == 0: self._freeze_timer += time
+        if self._speed_boosted: self._speed_boosted_duration += time
+        if self._size_boosted: self._size_boosted_duration += time
 
     def run_game(self):
-        clock = pygame.time.Clock()
-        game_time = 0
-        game_is_on = True
-        jelly_is_on = False
-        octopus_is_on = False
-        speed_booster_is_on = False
-        size_booster_is_on = False
-        speed_boosted = False
-        size_boosted = False
-        speed_boosted_duration = 0
-        size_boosted_duration = 0
-        speed_booster_time = random.uniform(20000, 40000)
-        size_booster_time = random.uniform(20000, 40000)
-        speed_booster_timer = 0
-        size_booster_timer = 0
-        freeze_timer = 0
-        freeze = 1
-        start = True
-        rod = FishingRod()
-        net = FishingNet()
         while True:
             # initialize the game by calling the start_game function if the game is not over
-            self.start_game(start)
+            self.start_game(self._start)
             # set the start parameter to False since the game has already started
-            start = False
+            self._start = False
             # set up the screen and background
             self._screen.fill("White")
             self._screen.blit(self._background, (0, 0))
@@ -283,32 +353,28 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT: sys.exit()
             # check if the game is live, continue if so
-            if game_is_on:
-                # scoretext is our live score that we display on the screen
-                scoretext = self._font_score.render("SCORE : " + str(self._score), True, (255, 255, 255))
-                self._screen.blit(scoretext, (1100, 50))
+            if self._game_is_on:
+                # score_text is our live score that we display on the screen
+                score_text = self._font_score.render("SCORE : " + str(self._score), True, (255, 255, 255))
+                self._screen.blit(score_text, (1100, 50))
                 # measure the time elapsed
-                game_time += clock.get_time()
-                speed_booster_timer += clock.get_time()
-                size_booster_timer += clock.get_time()
-                if freeze == 0: freeze_timer += clock.get_time()
-                if speed_boosted: speed_boosted_duration += clock.get_time()
-                if size_boosted: size_boosted_duration += clock.get_time()
+                time = self._clock.get_time()
+                self.update_timers(time)
 
-                if freeze_timer >= 3000:
-                    freeze_timer = 0
-                    freeze = 1
-                if speed_boosted_duration >= self._main_fish.get_boost_duration():
-                    speed_boosted = False
-                    speed_boosted_duration = 0
-                if size_boosted_duration >= self._main_fish.get_boost_duration():
+                if self._freeze_timer >= 3000:
+                    self._freeze_timer = 0
+                    self._freeze = 1
+                if self._speed_boosted_duration >= self._main_fish.get_boost_duration():
+                    self._speed_boosted = False
+                    self._speed_boosted_duration = 0
+                if self._size_boosted_duration >= self._main_fish.get_boost_duration():
                     self._main_fish.reboost_size()
-                    size_boosted = False
-                    size_boosted_duration = 0
+                    self._size_boosted = False
+                    self._size_boosted_duration = 0
 
                 # add boosters
-                if speed_booster_timer >= speed_booster_time and speed_booster_is_on == False:
-                    speed_booster_timer = 0
+                if self._speed_booster_timer >= self._speed_booster_time and self._speed_booster_is_on == False:
+                    self._speed_booster_timer = 0
                     # add the booster on the screen on a random place
                     # we check in case it collides with our main fish
                     # if so we don't initialize the booster and continue on random assignment
@@ -318,11 +384,11 @@ class Game:
                         if self._main_fish.get_rect().colliderect(self._speed_booster.get_rect()):
                             del self._speed_booster
                             continue
-                        speed_booster_is_on = True
+                        self._speed_booster_is_on = True
                         break
 
-                if size_booster_timer >= size_booster_time and size_booster_is_on == False:
-                    size_booster_timer = 0
+                if self._size_booster_timer >= self._size_booster_time and self._size_booster_is_on == False:
+                    self._size_booster_timer = 0
                     # add the booster on the screen on a random place
                     # we check in case it collides with our main fish
                     # if so we don't initialize the booster and continue on random assignment
@@ -331,23 +397,26 @@ class Game:
 
                         if self._main_fish.get_rect().colliderect(self._size_booster.get_rect()):
                             del self._size_booster
+                            self._size_booster = None
                             continue
-                        size_booster_is_on = True
+                        self._size_booster_is_on = True
                         break
 
-                if speed_booster_is_on:
-                    if speed_booster_timer >= self._speed_booster.get_duration():
-                        speed_booster_is_on = False
-                        speed_booster_timer = 0
+                if self._speed_booster_is_on:
+                    if self._speed_booster_timer >= self._speed_booster.get_duration():
+                        self._speed_booster_is_on = False
+                        self._speed_booster_timer = 0
                         del self._speed_booster
+                        self._speed_booster = None
 
-                if size_booster_is_on:
-                    if size_booster_timer >= self._size_booster.get_duration():
-                        size_booster_is_on = False
-                        size_booster_timer = 0
+                if self._size_booster_is_on:
+                    if self._size_booster_timer >= self._size_booster.get_duration():
+                        self._size_booster_is_on = False
+                        self._size_booster_timer = 0
                         del self._size_booster
+                        self._size_booster = None
 
-                if self._score == 10 and jelly_is_on == False:
+                if self._score == 10 and self._jelly_is_on == False:
                     # add the jelly fish on the screen
                     # it will be added from either top of the bottom of the screen
                     # it's location on the x axis is assigned randomly therefore
@@ -358,11 +427,12 @@ class Game:
 
                         if self._main_fish.get_rect().colliderect(self._jelly_fish.get_rect()):
                             del self._jelly_fish
+                            self._jelly_fish = None
                             continue
                         # when the jelly fish is created, the parameter "sea_animal_is_on" becomes True
-                        jelly_is_on = True
+                        self._jelly_is_on = True
                         break
-                if self._score == 15 and octopus_is_on == False:
+                if self._score == 15 and self._octopus_is_on == False:
                     # add the jelly fish on the screen
                     # it will be added from either top of the bottom of the screen
                     # it's location on the x axis is assigned randomly therefore
@@ -373,13 +443,14 @@ class Game:
 
                         if self._main_fish.get_rect().colliderect(self._octopus.get_rect()):
                             del self._octopus
+                            self._octopus = None
                             continue
                         # when the jelly fish is created, the parameter "sea_animal_is_on" becomes True
-                        octopus_is_on = True
+                        self._octopus_is_on = True
                         break
                 # we add a fish to the game every 4 seconds
-                if game_time >= 4000:
-                    game_time = 0
+                if self._game_time >= 4000:
+                    self._game_time = 0
                     while True:
                         fish = OtherFish(self._main_fish.get_width())
                         # we again check if it collides with our fish
@@ -393,11 +464,11 @@ class Game:
                     for fish in self._other_fish:
                         fish.update_velocity()
                 # our constant fps
-                clock.tick(40)
+                self._clock.tick(30)
                 # taking the user input below
                 # user controls the main fish
                 key_input = pygame.key.get_pressed()
-                UserInput(key_input, self._main_fish, speed_boosted, freeze=freeze)
+                UserInput(key_input, self._main_fish, self._speed_boosted, freeze=self._freeze)
 
                 # we check if the our fish reaches the top or bottom of the screen
                 # we update the velocity related
@@ -411,7 +482,7 @@ class Game:
 
                 # if jelly is on the screen we check if it's on the edges of the screen
                 # if so we update the velocity
-                if jelly_is_on:
+                if self._jelly_is_on:
                     if self._jelly_fish.get_rect().top + self._jelly_fish.get_vertical_velocity() < 0 or self._jelly_fish.get_rect().bottom + self._jelly_fish.get_vertical_velocity() > self._height:
                         self._jelly_fish.corner_vertical()
 
@@ -421,9 +492,9 @@ class Game:
                     # we check if jellyfish collides with our main fish
                     # if so, our fish dies and we update the parameters accordingly
                     if self._main_fish.get_rect().colliderect(self._jelly_fish.get_rect()):
-                        freeze = 0
+                        self._freeze = 0
 
-                if octopus_is_on:
+                if self._octopus_is_on:
                     if self._octopus.get_rect().top + self._octopus.get_vertical_velocity() < 0 or self._octopus.get_rect().bottom + self._octopus.get_vertical_velocity() > self._height:
                         self._octopus.corner_vertical()
 
@@ -433,42 +504,31 @@ class Game:
                     # we check if jellyfish collides with our main fish
                     # if so, our fish dies and we update the parameters accordingly
                     if self._main_fish.get_rect().colliderect(self._octopus.get_rect()):
-                        game_is_on = False
-                        octopus_is_on = False
-                        jelly_is_on = False
-                        del self._jelly_fish
-                        del self._octopus
-                        if speed_booster_is_on: del self._speed_booster
-                        if size_booster_is_on: del self._size_booster
-                        size_booster_timer = 0
-                        speed_booster_timer = 0
-                        speed_booster_is_on = False
-                        size_booster_is_on = False
                         self.finish_game()
 
-                if speed_booster_is_on:
+                if self._speed_booster_is_on:
                     if self._main_fish.get_rect().colliderect(self._speed_booster.get_rect()):
-                        speed_boosted = True
-                        speed_booster_is_on = False
+                        self._speed_boosted = True
+                        self._speed_booster_is_on = False
                         del self._speed_booster
-                        speed_booster_timer = 0
+                        self._speed_booster = None
+                        self._speed_booster_timer = 0
 
-                if size_booster_is_on:
+                if self._size_booster_is_on:
                     if self._main_fish.get_rect().colliderect(self._size_booster.get_rect()):
                         self._main_fish.boost_size()
-                        size_boosted = True
-                        size_booster_is_on = False
+                        self._size_boosted = True
+                        self._size_booster_is_on = False
                         del self._size_booster
-                        size_booster_timer = 0
-
-
+                        self._size_booster = None
+                        self._size_booster_timer = 0
 
                 # we move our main fish
-                self._main_fish.move(freeze)
+                self._main_fish.move(self._freeze)
                 # we move our jellyfish if it is on the screen
-                if jelly_is_on: self._jelly_fish.move()
-                if octopus_is_on: self._octopus.move()
-                # the list of fish that we eat, they will be removed mfrom the game at the end of the while loop
+                if self._jelly_is_on: self._jelly_fish.move()
+                if self._octopus_is_on: self._octopus.move()
+                # the list of fish that we eat, they will be removed from the game at the end of the while loop
                 remove_list = []
                 # other fish and main fish movements
                 for fish in self._other_fish:
@@ -493,21 +553,6 @@ class Game:
                         # otherwise our fish gets eaten and the game ends
                         # we update the parameters accordingly
                         else:
-                            if speed_booster_is_on: del self._speed_booster
-                            if size_booster_is_on: del self._size_booster
-                            size_booster_timer = 0
-                            speed_booster_timer = 0
-                            speed_booster_is_on = False
-                            size_booster_is_on = False
-                            if jelly_is_on:
-                                jelly_is_on = False
-                                del self._jelly_fish
-                            if octopus_is_on:
-                                octopus_is_on = False
-                                del self._octopus
-
-                            obstacle_time = 0
-                            game_is_on = False
                             self.finish_game()
                     # if our fish doesn't collide, game continues as usual
                     else:
@@ -522,20 +567,6 @@ class Game:
                                 self._main_fish.increase_size()
                                 self._main_fish.update_acceleration()
                             else:
-                                if speed_booster_is_on: del self._speed_booster
-                                if size_booster_is_on: del self._size_booster
-                                size_booster_timer = 0
-                                speed_booster_timer = 0
-                                speed_booster_is_on = False
-                                size_booster_is_on = False
-                                if jelly_is_on:
-                                    jelly_is_on = False
-                                    del self._jelly_fish
-                                if octopus_is_on:
-                                    octopus_is_on = False
-                                    del self._octopus
-                                obstacle_time = 0
-                                game_is_on = False
                                 self.finish_game()
                         # put the fish on the screen if there is no collision
                         else:
@@ -548,13 +579,45 @@ class Game:
                 # our fish gets slower if player doesn't move our fish
                 self._main_fish.decelerate()
                 # we draw our fish on the screen
+                if not self._rod_is_on and self._rod_timer >= self._rod_time:
+                    self._rod_timer = 0
+                    self._rod_is_on = True
+                    self._rod = FishingRod()
+                    # rod.remove()
+                if not self._net_is_on and self._net_timer >= self._net_time:
+                    self._net_timer = 0
+                    self._net_is_on = True
+                    self._net = FishingNet()
+                    # rod.remove()
                 self._screen.blit(self._main_fish.get_image(), self._main_fish.get_rect())
-                self._screen.blit(rod.get_image(), rod.get_rect())
-                self._screen.blit(net.get_image(), net.get_rect())
-                if jelly_is_on: self._screen.blit(self._jelly_fish.get_image(), self._jelly_fish.get_rect())
-                if octopus_is_on: self._screen.blit(self._octopus.get_image(), self._octopus.get_rect())
-                if speed_booster_is_on: self._screen.blit(self._speed_booster.get_image(), self._speed_booster.get_rect())
-                if size_booster_is_on: self._screen.blit(self._size_booster.get_image(),
+                if self._rod_is_on:
+                    self._rod.move(self._rod_timer)
+                    if self._main_fish.get_rect().colliderect(self._rod.get_rect()):
+                        self.finish_game()
+
+                if self._net_is_on:
+                    self._net.move(self._net_timer)
+                    if self._main_fish.get_rect().colliderect(self._net.get_rect()):
+                        self.finish_game()
+
+                if self._net_is_on and self._net.get_rect().y < -90:
+                    del self._net
+                    self._net = None
+                    self._net_is_on = False
+                    self._net_timer = 0
+
+                if self._rod_is_on and self._rod.get_rect().y < -200:
+                    del self._rod
+                    self._rod = None
+                    self._rod_is_on = False
+                    self._rod_timer = 0
+
+                if self._net_is_on: self._screen.blit(self._net.get_image(), self._net.get_rect())
+                if self._rod_is_on: self._screen.blit(self._rod.get_image(), self._rod.get_rect())
+                if self._jelly_is_on: self._screen.blit(self._jelly_fish.get_image(), self._jelly_fish.get_rect())
+                if self._octopus_is_on: self._screen.blit(self._octopus.get_image(), self._octopus.get_rect())
+                if self._speed_booster_is_on: self._screen.blit(self._speed_booster.get_image(), self._speed_booster.get_rect())
+                if self._size_booster_is_on: self._screen.blit(self._size_booster.get_image(),
                                                           self._size_booster.get_rect())
             # if the game is over, we display a screen that says game is over
             else:
@@ -565,8 +628,8 @@ class Game:
                 # if the player presses "R" we restart the game again
                 key_input = pygame.key.get_pressed()
                 if key_input[pygame.K_r]:
-                    start = True
-                    game_is_on = True
+                    self._start = True
+                    self._game_is_on = True
             # update the display
             pygame.display.flip()
             pygame.display.update()
