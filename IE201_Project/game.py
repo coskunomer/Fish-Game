@@ -6,7 +6,7 @@ pygame.init()
 class Fish(pygame.sprite.Sprite):
     def __init__(self, _width):
         super(Fish, self).__init__()
-        self._width = random.uniform(_width*0.5, _width*1.25)
+        self._width = random.uniform(_width*0.5, _width*1.33)
         self._height = self._width * 0.5
         self._fish = pygame.image.load("game_assets/fish_images/fish1_left.png")
         self._fish = pygame.transform.scale(self._fish, (self._width, self._height))
@@ -43,6 +43,10 @@ class Fish(pygame.sprite.Sprite):
 
     def corner_horizontal(self):
         self._vel_x = -self._vel_x
+
+    def change_direction(self):
+        self._vel_x = -self._vel_x
+        self._vel_y = -self._vel_y
 
 class Obstacles(pygame.sprite.Sprite):
     def __init__(self):
@@ -216,13 +220,13 @@ class UserInput:
         self._main_fish = main_fish
         if speed_boosted:
             if key_input[pygame.K_LEFT]:
-                self._main_fish.control_main_fish("l", boosted=4, freeze=freeze)
+                self._main_fish.control_main_fish("l", boosted=2.5, freeze=freeze)
             if key_input[pygame.K_UP]:
-                self._main_fish.control_main_fish("u", boosted=4, freeze=freeze)
+                self._main_fish.control_main_fish("u", boosted=2.5, freeze=freeze)
             if key_input[pygame.K_RIGHT]:
-                self._main_fish.control_main_fish("r", boosted=4, freeze=freeze)
+                self._main_fish.control_main_fish("r", boosted=2.5, freeze=freeze)
             if key_input[pygame.K_DOWN]:
-                self._main_fish.control_main_fish("d", boosted=4, freeze=freeze)
+                self._main_fish.control_main_fish("d", boosted=2.5, freeze=freeze)
         else:
             if key_input[pygame.K_LEFT]:
                 self._main_fish.control_main_fish("l")
@@ -542,6 +546,42 @@ class Game:
 
                     if fish.get_rect().left + fish.get_horizontal_velocity() < 0 or fish.get_rect().right + fish.get_horizontal_velocity() > self._width:
                         fish.corner_horizontal()
+
+                    # if the other fish collides with jellyfish, it changes direction
+                    if self._jelly_is_on:
+                        if fish.get_rect().colliderect(self._jelly_fish.get_rect()):
+                            fish.change_direction()
+                            fish.move()
+
+                    # if the other fish collides with octopus, it changes direction
+                    if self._octopus_is_on:
+                        if fish.get_rect().colliderect(self._octopus.get_rect()):
+                            fish.change_direction()
+                            fish.move()
+
+                    # if the other fish collides with fishing net, it changes direction
+                    if self._net_is_on:
+                        if fish.get_rect().colliderect(self._net.get_rect()):
+                            fish.change_direction()
+                            fish.move()
+
+                    # if the other fish collides with fishing rod, it changes direction
+                    if self._rod_is_on:
+                        if fish.get_rect().colliderect(self._rod.get_rect()):
+                            fish.change_direction()
+                            fish.move()
+
+                    # if the other fish collides with size booster, it changes direction
+                    if self._size_booster_is_on:
+                        if fish.get_rect().colliderect(self._size_booster.get_rect()):
+                            fish.change_direction()
+                            fish.move()
+
+                    # if the other fish collides with speed booster, it changes direction
+                    if self._speed_booster_is_on:
+                        if fish.get_rect().colliderect(self._speed_booster.get_rect()):
+                            fish.change_direction()
+                            fish.move()
 
                     # we check if the main fish collides with an other fish
                     if self._main_fish.get_rect().colliderect(fish.get_rect()):
