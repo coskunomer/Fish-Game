@@ -3,7 +3,7 @@ import pygame
 import sys
 pygame.init()
 
-class Fish(pygame.sprite.Sprite):
+class Fish:
     def __init__(self, _width):
         super(Fish, self).__init__()
         self._width = random.uniform(_width*0.5, _width*1.33)
@@ -48,7 +48,7 @@ class Fish(pygame.sprite.Sprite):
         self._vel_x = -self._vel_x
         self._vel_y = -self._vel_y
 
-class Obstacles(pygame.sprite.Sprite):
+class Obstacles:
     def __init__(self):
         super(Obstacles, self).__init__()
         self._width = 20
@@ -56,7 +56,7 @@ class Obstacles(pygame.sprite.Sprite):
         self._duration = random.uniform(20000, 40000)
         self._obstacle = pygame.image.load("game_assets/obstacles/fishing_rod/anchor.png")
         self._obstacle = pygame.transform.scale(self._obstacle, (self._width, self._height))
-        self._obstacle_rect = self._obstacle.get_rect(topleft=(random.uniform(50, 1200), -200))
+        self._obstacle_rect = self._obstacle.get_rect(topleft=(random.uniform(30, 650), -200))
 
     def get_width(self):
         return self._obstacle_rect.width
@@ -175,7 +175,7 @@ class FishingNet(Obstacles):
         self._height = 90
         self._obstacle = pygame.image.load("game_assets/obstacles/fishing_net/fishing_net.png")
         self._obstacle = pygame.transform.scale(self._obstacle, (self._width, self._height))
-        self._obstacle_rect = self._obstacle.get_rect(topleft=(random.uniform(30, 1000), -90))
+        self._obstacle_rect = self._obstacle.get_rect(topleft=(random.uniform(650, 1000), -90))
 
 class FishingRod(Obstacles):
     def __init__(self):
@@ -189,7 +189,7 @@ class SpeedBooster(pygame.sprite.Sprite):
         self._duration = random.uniform(5000, 10000)
         self._image = pygame.image.load("game_assets/boosters/speed_booster.png")
         self._image = pygame.transform.scale(self._image, (self._width, self._height))
-        self._image_rect = self._image.get_rect(topleft=(random.uniform(100, 1200), random.uniform(50, 540)))
+        self._image_rect = self._image.get_rect(topleft=(random.uniform(100, 1200), random.uniform(200, 540)))
 
     def get_width(self):
         return self._image_rect.width
@@ -212,7 +212,7 @@ class SizeBooster(SpeedBooster):
         super(SizeBooster, self).__init__()
         self._image = pygame.image.load("game_assets/boosters/size_booster.png")
         self._image = pygame.transform.scale(self._image, (self._width, self._height))
-        self._image_rect = self._image.get_rect(topleft=(random.uniform(100, 1200), random.uniform(50, 540)))
+        self._image_rect = self._image.get_rect(topleft=(random.uniform(100, 1200), random.uniform(200, 540)))
 
 class UserInput:
     def __init__(self, key_input, main_fish, speed_boosted, freeze=1):
