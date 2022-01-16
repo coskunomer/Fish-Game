@@ -10,7 +10,7 @@ class Fish:
         self._fish = pygame.image.load("game_assets/fish_images/fish1_left.png")
         self._fish = pygame.transform.scale(self._fish, (self._width, self._height))
         self._choice = random.choice((0, 1))
-        self._fish_rect = self._fish.get_rect(topleft=(100 + self._choice*1100, random.uniform(50, 550)))
+        self._fish_rect = self._fish.get_rect(topleft=(100 + self._choice*1000, random.uniform(50, 550)))
         if self._choice == 0: self._vel_x = 4
         else: self._vel_x = -4
         self._vel_y = random.uniform(-3, 3)
@@ -92,18 +92,18 @@ class MainFish(Fish):
         self._fish_right_rect = self._fish_right.get_rect(center=(650, 300))
         self._vel_x = 0
         self._vel_y = 0
-        self._acceleration = 0.5
+        self._acceleration = 10
         self._boost_duration = 7000
 
     def control_main_fish(self, type, boosted=1, freeze=1):
-        if type == "l" and abs(self._vel_x - self._acceleration) < (500 / self.get_width()):
-            self._vel_x -= self._acceleration*boosted*freeze
-        if type == "r" and (self._vel_x + self._acceleration) < (500 / self.get_width()):
-            self._vel_x += self._acceleration*boosted*freeze
-        if type == "d" and (self._vel_y + self._acceleration) < (500 / self.get_width()):
-            self._vel_y += self._acceleration*boosted*freeze
-        if type == "u" and abs(self._vel_y - self._acceleration) < (500 / self.get_width()):
-            self._vel_y -= self._acceleration*boosted*freeze
+        if type == "l":
+            self._vel_x = -self._acceleration*boosted*freeze
+        if type == "r":
+            self._vel_x = self._acceleration*boosted*freeze
+        if type == "d":
+            self._vel_y = self._acceleration*boosted*freeze
+        if type == "u":
+            self._vel_y = -self._acceleration*boosted*freeze
 
     def corner_vertical(self):
         self._vel_y = 0
@@ -119,7 +119,7 @@ class MainFish(Fish):
         self._fish = pygame.transform.scale(pygame.image.load("game_assets/fish_images/fish2_left.png"), (self._fish_rect.width, self._fish_rect.height))
 
     def update_acceleration(self):
-        self._acceleration = max(0.05, 300 / (self.get_height() * self.get_width()))
+        self._acceleration = max(3, 282 / (self.get_height() * self.get_width())**0.5)
 
     def decelerate(self):
         pass
@@ -137,6 +137,10 @@ class MainFish(Fish):
     def get_boost_duration(self):
         return self._boost_duration
 
+    def zero_velocity(self):
+        self._vel_y = 0
+        self._vel_x = 0
+
 class OtherFish(Fish):
     def __init__(self, _width, _difficulty):
         super(OtherFish, self).__init__(_width)
@@ -146,7 +150,7 @@ class OtherFish(Fish):
         self._fish = pygame.image.load("game_assets/fish_images/fish1_left.png")
         self._fish = pygame.transform.scale(self._fish, (self._width, self._height))
         self._choice = random.choice((0, 1))
-        self._fish_rect = self._fish.get_rect(topleft=(200 + self._choice*1000, random.uniform(50, 550)))
+        self._fish_rect = self._fish.get_rect(topleft=(100 + self._choice*1000, random.uniform(50, 550)))
 
     def update_velocity(self):
         self._vel_x = random.uniform(-5, 5)
@@ -227,13 +231,13 @@ class UserInput:
         self._main_fish = main_fish
         if speed_boosted:
             if key_input[pygame.K_LEFT]:
-                self._main_fish.control_main_fish("l", boosted=2.5, freeze=freeze)
+                self._main_fish.control_main_fish("l", boosted=2, freeze=freeze)
             if key_input[pygame.K_UP]:
-                self._main_fish.control_main_fish("u", boosted=2.5, freeze=freeze)
+                self._main_fish.control_main_fish("u", boosted=2, freeze=freeze)
             if key_input[pygame.K_RIGHT]:
-                self._main_fish.control_main_fish("r", boosted=2.5, freeze=freeze)
+                self._main_fish.control_main_fish("r", boosted=2, freeze=freeze)
             if key_input[pygame.K_DOWN]:
-                self._main_fish.control_main_fish("d", boosted=2.5, freeze=freeze)
+                self._main_fish.control_main_fish("d", boosted=2, freeze=freeze)
         else:
             if key_input[pygame.K_LEFT]:
                 self._main_fish.control_main_fish("l")
@@ -254,7 +258,7 @@ class Game:
         self._screen = pygame.display.set_mode((self._width, self._height))
         self._background = pygame.image.load("game_assets/background/background.jpg").convert()
         self._background = pygame.transform.scale(self._background, (self._width, self._height))
-        self._other_fish = []
+        self._other_fish = dict()
         self._score = 0
         self._font_score = pygame.font.SysFont("monospace", 25)
         self._font_game_over = pygame.font.SysFont("monospace", 70)
@@ -291,6 +295,8 @@ class Game:
         self._net = None
         self._rod = None
         self._win = 0
+        self._left = True
+        self._finish = False
 
     def start_game(self, start):
         if start == False: return 0
@@ -301,11 +307,12 @@ class Game:
                 if self._main_fish.get_rect().colliderect(fish.get_rect()):
                     del fish
                     continue
-                self._other_fish.append(OtherFish(self._main_fish.get_width(), self.get_difficulty()))
+                self._other_fish[OtherFish(self._main_fish.get_width(), self.get_difficulty())] = [False, 0, 0]
                 break
 
     def finish_game(self):
         self._game_is_on = False
+        self._finish = False
         self._main_menu = False
         self._game_time = 0
         self._jelly_is_on = False
@@ -329,9 +336,9 @@ class Game:
         self._rod_time = random.uniform(20000, 40000)
         self._net_time = random.uniform(20000, 40000)
         self._score = 0
-        for fish in self._other_fish:
+        for fish in self._other_fish.keys():
             del fish
-        self._other_fish = []
+        self._other_fish = dict()
         if self._speed_booster_is_on: del self._speed_booster
         if self._size_booster_is_on: del self._size_booster
         if self._jelly_is_on:
@@ -521,12 +528,15 @@ class Game:
                         if self._main_fish.get_rect().colliderect(fish.get_rect()):
                             del fish
                             continue
-                        self._other_fish.append(OtherFish(self._main_fish.get_width(), self.get_difficulty()))
+                        self._other_fish[fish] = [False, 0, 0]
                         break
                     # we update the velocities of all fish every 4 seconds
                     # they change both direction and speed
-                    for fish in self._other_fish:
+                for fish in self._other_fish.keys():
+                    if self._other_fish[fish][2] >= 5000:
                         fish.update_velocity()
+                        self._other_fish[fish][2] = 0
+                    self._other_fish[fish][2] += time
                 # our constant fps
                 self._clock.tick(30)
                 # taking the user input below
@@ -568,7 +578,7 @@ class Game:
                     # we check if jellyfish collides with our main fish
                     # if so, our fish dies and we update the parameters accordingly
                     if self._main_fish.get_rect().colliderect(self._octopus.get_rect()):
-                        self.finish_game()
+                        self._finish = True
 
                 if self._speed_booster_is_on:
                     if self._main_fish.get_rect().colliderect(self._speed_booster.get_rect()):
@@ -590,52 +600,62 @@ class Game:
                 # the list of fish that we eat, they will be removed from the game at the end of the while loop
                 remove_list = []
                 # other fish and main fish movements
-                for fish in self._other_fish:
+                for fish in self._other_fish.keys():
                     # we check if fish are on the edges of the screen
                     # if so we update the velocity
                     if fish.get_rect().top + fish.get_vertical_velocity() < 0 or fish.get_rect().bottom + fish.get_vertical_velocity() > self._height:
                         fish.corner_vertical()
-                        fish.move()
 
                     if fish.get_rect().left + fish.get_horizontal_velocity() < 0 or fish.get_rect().right + fish.get_horizontal_velocity() > self._width:
                         fish.corner_horizontal()
-                        fish.move()
 
                     # if the other fish collides with jellyfish, it changes direction
                     if self._jelly_is_on:
                         if fish.get_rect().colliderect(self._jelly_fish.get_rect()):
-                            fish.change_direction()
-                            fish.move()
+                            if self._other_fish[fish][0] == False:
+                                fish.change_direction()
+                                self._other_fish[fish][0] = True
 
                     # if the other fish collides with octopus, it changes direction
                     if self._octopus_is_on:
                         if fish.get_rect().colliderect(self._octopus.get_rect()):
-                            fish.change_direction()
-                            fish.move()
+                            if self._other_fish[fish][0] == False:
+                                fish.change_direction()
+                                self._other_fish[fish][0] = True
 
                     # if the other fish collides with fishing net, it changes direction
                     if self._net_is_on:
                         if fish.get_rect().colliderect(self._net.get_rect()):
-                            fish.change_direction()
-                            fish.move()
+                            if self._other_fish[fish][0] == False:
+                                fish.change_direction()
+                                self._other_fish[fish][0] = True
 
                     # if the other fish collides with fishing rod, it changes direction
                     if self._rod_is_on:
                         if fish.get_rect().colliderect(self._rod.get_rect()):
-                            fish.change_direction()
-                            fish.move()
+                            if self._other_fish[fish][0] == False:
+                                fish.change_direction()
+                                self._other_fish[fish][0] = True
 
                     # if the other fish collides with size booster, it changes direction
                     if self._size_booster_is_on:
                         if fish.get_rect().colliderect(self._size_booster.get_rect()):
-                            fish.change_direction()
-                            fish.move()
+                            if self._other_fish[fish][0] == False:
+                                fish.change_direction()
+                                self._other_fish[fish][0] = True
 
                     # if the other fish collides with speed booster, it changes direction
                     if self._speed_booster_is_on:
                         if fish.get_rect().colliderect(self._speed_booster.get_rect()):
-                            fish.change_direction()
-                            fish.move()
+                            if self._other_fish[fish][0] == False:
+                                fish.change_direction()
+                                self._other_fish[fish][0] = True
+
+                    if self._other_fish[fish][0]:
+                        self._other_fish[fish][1] += time
+                        if self._other_fish[fish][1] > 500:
+                            self._other_fish[fish][1] = 0
+                            self._other_fish[fish][0] = False
 
                     # we check if the main fish collides with an other fish
                     if self._main_fish.get_rect().colliderect(fish.get_rect()):
@@ -650,7 +670,7 @@ class Game:
                         # otherwise our fish gets eaten and the game ends
                         # we update the parameters accordingly
                         else:
-                            self.finish_game()
+                            self._finish = True
                     # if our fish doesn't collide, game continues as usual
                     else:
                         # move the fish
@@ -660,7 +680,7 @@ class Game:
 
                 # remove the fish that are eaten by our fish from the game
                 for fish in remove_list:
-                    self._other_fish.remove(fish)
+                    self._other_fish.pop(fish)
                     del fish
                 # our fish gets slower if player doesn't move our fish
                 self._main_fish.decelerate()
@@ -675,17 +695,24 @@ class Game:
                     self._net_is_on = True
                     self._net = FishingNet()
                     # rod.remove()
-                if self._main_fish.get_horizontal_velocity() <0: self._screen.blit(self._main_fish.get_image(), self._main_fish.get_rect())
-                else: self._screen.blit(pygame.transform.flip(self._main_fish.get_image(), True, False), self._main_fish.get_rect())
+                if self._main_fish.get_horizontal_velocity() < 0:
+                    self._screen.blit(self._main_fish.get_image(), self._main_fish.get_rect())
+                    self._left = True
+                elif self._main_fish.get_horizontal_velocity() > 0:
+                    self._screen.blit(pygame.transform.flip(self._main_fish.get_image(), True, False), self._main_fish.get_rect())
+                    self._left = False
+                else:
+                    if self._left: self._screen.blit(self._main_fish.get_image(), self._main_fish.get_rect())
+                    else: self._screen.blit(pygame.transform.flip(self._main_fish.get_image(), True, False), self._main_fish.get_rect())
                 if self._rod_is_on:
                     self._rod.move(self._rod_timer)
                     if self._main_fish.get_rect().colliderect(self._rod.get_rect()):
-                        self.finish_game()
+                        self._finish = True
 
                 if self._net_is_on:
                     self._net.move(self._net_timer)
                     if self._main_fish.get_rect().colliderect(self._net.get_rect()):
-                        self.finish_game()
+                        self._finish = True
 
                 if self._net_is_on and self._net.get_rect().y < -90:
                     del self._net
@@ -701,6 +728,7 @@ class Game:
 
                 # we move our main fish
                 self._main_fish.move(self._freeze)
+                self._main_fish.zero_velocity()
                 # we move our jellyfish if it is on the screen
                 if self._jelly_is_on: self._jelly_fish.move()
                 if self._octopus_is_on: self._octopus.move()
@@ -714,8 +742,11 @@ class Game:
 
                 # winning scenario for the game, if the score is bigger than 30, you win
                 if self._score >= 30:
-                    self.finish_game()
+                    self._finish = True
                     self._win = 1
+
+                if self._finish:
+                    self.finish_game()
 
             # if the game is over, we display a screen that says game is over
             else:
