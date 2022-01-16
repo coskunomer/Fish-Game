@@ -6,12 +6,12 @@ pygame.init()
 class Fish:
     def __init__(self, _width):
         super(Fish, self).__init__()
-        self._width = random.uniform(_width*0.5, _width*1.33)
+        self._width = random.uniform(_width*0.55, _width*1.33)
         self._height = self._width * 0.5
         self._fish = pygame.image.load("game_assets/fish_images/fish1_left.png")
         self._fish = pygame.transform.scale(self._fish, (self._width, self._height))
         self._choice = random.choice((0, 1))
-        self._fish_rect = self._fish.get_rect(topleft=(self._choice*1250, random.uniform(50, 550)))
+        self._fish_rect = self._fish.get_rect(topleft=(self._choice*1220, random.uniform(50, 550)))
         if self._choice == 0: self._vel_x = 4
         else: self._vel_x = -4
         self._vel_y = random.uniform(-3, 3)
@@ -215,7 +215,7 @@ class SizeBooster(SpeedBooster):
         self._image_rect = self._image.get_rect(topleft=(random.uniform(100, 1200), random.uniform(200, 540)))
 
 class UserInput:
-    def __init__(self, key_input, main_fish, speed_boosted, freeze=1):
+    def __init__(self, key_input, main_fish=None, speed_boosted=0, freeze=1):
         self._key_input = key_input
         self._main_fish = main_fish
         if speed_boosted:
@@ -253,6 +253,7 @@ class Game:
         self._font_restart = pygame.font.SysFont("monospace", 40)
         self._clock = pygame.time.Clock()
         self._game_time = 0
+        self._main_menu = True
         self._game_is_on = True
         self._jelly_is_on = False
         self._octopus_is_on = False
@@ -296,6 +297,7 @@ class Game:
 
     def finish_game(self):
         self._game_is_on = False
+        self._main_menu = False
         self._game_time = 0
         self._jelly_is_on = False
         self._octopus_is_on = False
@@ -352,6 +354,35 @@ class Game:
         if self._speed_boosted: self._speed_boosted_duration += time
         if self._size_boosted: self._size_boosted_duration += time
 
+    def main_menu(self, mouse, click=False):
+        if self._width / 3 + 15 <= mouse[0] <= self._width / 3 + 315 and 140 <= mouse[1] <= 230:
+            pygame.draw.rect(self._screen, (144, 238, 144), [self._width / 3 + 15, 140, 300, 90],
+                             border_radius=20)
+        else:
+            pygame.draw.rect(self._screen, (127, 255, 0), [self._width / 3 + 15, 140, 300, 90],
+                             border_radius=20)
+        if self._width / 3 + 15 <= mouse[0] <= self._width / 3 + 315 and 255 <= mouse[1] <= 345:
+            pygame.draw.rect(self._screen, (255, 255, 102), [self._width / 3 + 15, 255, 300, 90],
+                             border_radius=20)
+        else:
+            pygame.draw.rect(self._screen, (255, 255, 0), [self._width / 3 + 15, 255, 300, 90], border_radius=20)
+        if self._width / 3 + 15 <= mouse[0] <= self._width / 3 + 315 and 370 <= mouse[1] <= 460:
+            pygame.draw.rect(self._screen, (255, 127, 127), [self._width / 3 + 15, 370, 300, 90], border_radius=20)
+        else:
+            pygame.draw.rect(self._screen, (255, 0, 0), [self._width / 3 + 15, 370, 300, 90], border_radius=20)
+        self._screen.blit(self._font_restart.render("EASY", True, (0, 0, 0)), (self._width / 3 + 111, 168))
+        self._screen.blit(self._font_restart.render("MEDIUM", True, (0, 0, 0)),
+                          (self._width / 3 + 100, 283))
+        self._screen.blit(self._font_restart.render("HARD", True, (0, 0, 0)),
+                          (self._width / 3 + 111, 398))
+        if click:
+            if self._width / 3 + 15 <= mouse[0] <= self._width / 3 + 315 and 140 <= mouse[1] <= 230:
+                self._main_menu = False
+            elif self._width / 3 + 15 <= mouse[0] <= self._width / 3 + 315 and 255 <= mouse[1] <= 345:
+                self._main_menu = False
+            elif self._width / 3 + 15 <= mouse[0] <= self._width / 3 + 315 and 370 <= mouse[1] <= 460:
+                self._main_menu = False
+
     def run_game(self):
         while True:
             # initialize the game by calling the start_game function if the game is not over
@@ -364,8 +395,14 @@ class Game:
             # check if the player clicked quit button
             for event in pygame.event.get():
                 if event.type == pygame.QUIT: sys.exit()
+
+            if self._main_menu:
+                mouse = pygame.mouse.get_pos()
+                click = pygame.mouse.get_pressed()
+                self.main_menu(mouse, click=click[0])
+
             # check if the game is live, continue if so
-            if self._game_is_on:
+            elif self._game_is_on:
                 # score_text is our live score that we display on the screen
                 score_text = self._font_score.render("SCORE : " + str(self._score), True, (255, 255, 255))
                 self._screen.blit(score_text, (1100, 50))
@@ -543,9 +580,11 @@ class Game:
                     # if so we update the velocity
                     if fish.get_rect().top + fish.get_vertical_velocity() < 0 or fish.get_rect().bottom + fish.get_vertical_velocity() > self._height:
                         fish.corner_vertical()
+                        fish.move()
 
                     if fish.get_rect().left + fish.get_horizontal_velocity() < 0 or fish.get_rect().right + fish.get_horizontal_velocity() > self._width:
                         fish.corner_horizontal()
+                        fish.move()
 
                     # if the other fish collides with jellyfish, it changes direction
                     if self._jelly_is_on:
@@ -661,9 +700,9 @@ class Game:
             # if the game is over, we display a screen that says game is over
             else:
                 text = self._font_game_over.render("GAME OVER", True, (255, 255, 255))
-                self._screen.blit(text, (420, 200))
+                self._screen.blit(text, (440, 200))
                 restart = self._font_restart.render("PRESS R TO RESTART", True, (255, 255, 255))
-                self._screen.blit(restart, (460, 300))
+                self._screen.blit(restart, (440, 300))
                 # if the player presses "R" we restart the game again
                 key_input = pygame.key.get_pressed()
                 if key_input[pygame.K_r]:
