@@ -699,12 +699,33 @@ class Game:
                                                           self._size_booster.get_rect())
             # if the game is over, we display a screen that says game is over
             else:
-                text = self._font_game_over.render("GAME OVER", True, (255, 255, 255))
-                self._screen.blit(text, (440, 200))
-                restart = self._font_restart.render("PRESS R TO RESTART", True, (255, 255, 255))
-                self._screen.blit(restart, (440, 300))
-                # if the player presses "R" we restart the game again
+                mouse = pygame.mouse.get_pos()
+                click = pygame.mouse.get_pressed()
                 key_input = pygame.key.get_pressed()
+                text = self._font_game_over.render("GAME OVER", True, (255, 255, 255))
+                self._screen.blit(text, (440, 120))
+                if 475 <= mouse[0] <= 775 and 230 <= mouse[1] <= 320:
+                    pygame.draw.rect(self._screen, (245, 163, 62), [475, 230, 300, 90],
+                                     border_radius=20)
+                else: pygame.draw.rect(self._screen, (235, 97, 35), [475, 230, 300, 90],
+                                 border_radius=20)
+                main_menu = self._font_restart.render("MAIN MENU", True, (0, 0, 0))
+                self._screen.blit(main_menu, (511, 259))
+                restart = self._font_restart.render("RESTART", True, (0, 0, 0))
+                if 475 <= mouse[0] <= 775 and 350 <= mouse[1] <= 440: pygame.draw.rect(self._screen, (254, 217, 177), [475, 350, 300, 90],
+                                 border_radius=20)
+                else: pygame.draw.rect(self._screen, (245, 163, 62), [475, 350, 300, 90],
+                                 border_radius=20)
+                self._screen.blit(restart, (540, 375))
+                if click[0]:
+                    if 475 <= mouse[0] <= 775 and 230 <= mouse[1] <= 320:
+                        self._main_menu = True
+                        self._start = True
+                        self._game_is_on = True
+                    if 475 <= mouse[0] <= 775 and 350 <= mouse[1] <= 440:
+                        self._start = True
+                        self._game_is_on = True
+                # if the player presses "R" we restart the game again
                 if key_input[pygame.K_r]:
                     self._start = True
                     self._game_is_on = True
