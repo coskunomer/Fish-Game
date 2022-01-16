@@ -10,7 +10,7 @@ class Fish:
         self._fish = pygame.image.load("game_assets/fish_images/fish1_left.png")
         self._fish = pygame.transform.scale(self._fish, (self._width, self._height))
         self._choice = random.choice((0, 1))
-        self._fish_rect = self._fish.get_rect(topleft=(self._choice*1220, random.uniform(50, 550)))
+        self._fish_rect = self._fish.get_rect(topleft=(100 + self._choice*1100, random.uniform(50, 550)))
         if self._choice == 0: self._vel_x = 4
         else: self._vel_x = -4
         self._vel_y = random.uniform(-3, 3)
@@ -112,6 +112,8 @@ class MainFish(Fish):
         self._vel_x = 0
 
     def increase_size(self):
+        if self._fish_rect.width > 100:
+            pass
         self._fish_rect.width *= 1.05
         self._fish_rect.height = self._fish_rect.width * 0.5
         self._fish = pygame.transform.scale(pygame.image.load("game_assets/fish_images/fish2_left.png"), (self._fish_rect.width, self._fish_rect.height))
@@ -144,7 +146,7 @@ class OtherFish(Fish):
         self._fish = pygame.image.load("game_assets/fish_images/fish1_left.png")
         self._fish = pygame.transform.scale(self._fish, (self._width, self._height))
         self._choice = random.choice((0, 1))
-        self._fish_rect = self._fish.get_rect(topleft=(self._choice * 1220, random.uniform(50, 550)))
+        self._fish_rect = self._fish.get_rect(topleft=(200 + self._choice*1000, random.uniform(50, 550)))
 
     def update_velocity(self):
         self._vel_x = random.uniform(-5, 5)
@@ -288,6 +290,7 @@ class Game:
         self._octopus = None
         self._net = None
         self._rod = None
+        self._win = 0
 
     def start_game(self, start):
         if start == False: return 0
@@ -707,15 +710,24 @@ class Game:
                 if self._jelly_is_on: self._screen.blit(self._jelly_fish.get_image(), self._jelly_fish.get_rect())
                 if self._octopus_is_on: self._screen.blit(self._octopus.get_image(), self._octopus.get_rect())
                 if self._speed_booster_is_on: self._screen.blit(self._speed_booster.get_image(), self._speed_booster.get_rect())
-                if self._size_booster_is_on: self._screen.blit(self._size_booster.get_image(),
-                                                          self._size_booster.get_rect())
+                if self._size_booster_is_on: self._screen.blit(self._size_booster.get_image(), self._size_booster.get_rect())
+
+                # winning scenario for the game, if the score is bigger than 30, you win
+                if self._score >= 30:
+                    self.finish_game()
+                    self._win = 1
+
             # if the game is over, we display a screen that says game is over
             else:
                 mouse = pygame.mouse.get_pos()
                 click = pygame.mouse.get_pressed()
                 key_input = pygame.key.get_pressed()
-                text = self._font_game_over.render("GAME OVER", True, (255, 255, 255))
-                self._screen.blit(text, (440, 120))
+                if self._win == 0:
+                    text = self._font_game_over.render("GAME OVER", True, (255, 255, 255))
+                    self._screen.blit(text, (440, 120))
+                else:
+                    text = self._font_game_over.render("YOU WON!", True, (255, 255, 255))
+                    self._screen.blit(text, (460, 120))
                 if 475 <= mouse[0] <= 775 and 230 <= mouse[1] <= 320:
                     pygame.draw.rect(self._screen, (245, 163, 62), [475, 230, 300, 90],
                                      border_radius=20)
@@ -734,13 +746,16 @@ class Game:
                         self._main_menu = True
                         self._start = True
                         self._game_is_on = True
+                        self._win = 0
                     if 475 <= mouse[0] <= 775 and 350 <= mouse[1] <= 440:
                         self._start = True
                         self._game_is_on = True
+                        self._win = 0
                 # if the player presses "R" we restart the game again
                 if key_input[pygame.K_r]:
                     self._start = True
                     self._game_is_on = True
+                    self._win = 0
             # update the display
             pygame.display.flip()
             pygame.display.update()
