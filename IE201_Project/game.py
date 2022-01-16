@@ -5,7 +5,6 @@ pygame.init()
 
 class Fish:
     def __init__(self, _width):
-        super(Fish, self).__init__()
         self._width = random.uniform(_width*0.55, _width*1.33)
         self._height = self._width * 0.5
         self._fish = pygame.image.load("game_assets/fish_images/fish1_left.png")
@@ -50,7 +49,6 @@ class Fish:
 
 class Obstacles:
     def __init__(self):
-        super(Obstacles, self).__init__()
         self._width = 20
         self._height = 200
         self._duration = random.uniform(20000, 40000)
@@ -138,8 +136,15 @@ class MainFish(Fish):
         return self._boost_duration
 
 class OtherFish(Fish):
-    def __init__(self, _width):
+    def __init__(self, _width, _difficulty):
         super(OtherFish, self).__init__(_width)
+        self._difficulty = _difficulty
+        self._width = random.uniform(_width * 0.55 + _width*self._difficulty*0.05, _width * 1.33 + _width*self._difficulty*0.05)
+        self._height = self._width * 0.5
+        self._fish = pygame.image.load("game_assets/fish_images/fish1_left.png")
+        self._fish = pygame.transform.scale(self._fish, (self._width, self._height))
+        self._choice = random.choice((0, 1))
+        self._fish_rect = self._fish.get_rect(topleft=(self._choice * 1220, random.uniform(50, 550)))
 
     def update_velocity(self):
         self._vel_x = random.uniform(-5, 5)
@@ -241,6 +246,7 @@ class UserInput:
 
 class Game:
     def __init__(self):
+        self._difficulty = 0
         self._width = 1300
         self._height = 590
         self._screen = pygame.display.set_mode((self._width, self._height))
@@ -288,11 +294,11 @@ class Game:
         self._main_fish = MainFish()
         for i in range(5):
             while True:
-                fish = OtherFish(self._main_fish.get_width())
+                fish = OtherFish(self._main_fish.get_width(), self.get_difficulty())
                 if self._main_fish.get_rect().colliderect(fish.get_rect()):
                     del fish
                     continue
-                self._other_fish.append(OtherFish(self._main_fish.get_width()))
+                self._other_fish.append(OtherFish(self._main_fish.get_width(), self.get_difficulty()))
                 break
 
     def finish_game(self):
@@ -378,10 +384,16 @@ class Game:
         if click:
             if self._width / 3 + 15 <= mouse[0] <= self._width / 3 + 315 and 140 <= mouse[1] <= 230:
                 self._main_menu = False
+                self._difficulty = 0
             elif self._width / 3 + 15 <= mouse[0] <= self._width / 3 + 315 and 255 <= mouse[1] <= 345:
                 self._main_menu = False
+                self._difficulty = 1
             elif self._width / 3 + 15 <= mouse[0] <= self._width / 3 + 315 and 370 <= mouse[1] <= 460:
                 self._main_menu = False
+                self._difficulty = 2
+
+    def get_difficulty(self):
+        return self._difficulty
 
     def run_game(self):
         while True:
@@ -501,12 +513,12 @@ class Game:
                 if self._game_time >= 4000:
                     self._game_time = 0
                     while True:
-                        fish = OtherFish(self._main_fish.get_width())
+                        fish = OtherFish(self._main_fish.get_width(), self.get_difficulty())
                         # we again check if it collides with our fish
                         if self._main_fish.get_rect().colliderect(fish.get_rect()):
                             del fish
                             continue
-                        self._other_fish.append(OtherFish(self._main_fish.get_width()))
+                        self._other_fish.append(OtherFish(self._main_fish.get_width(), self.get_difficulty()))
                         break
                     # we update the velocities of all fish every 4 seconds
                     # they change both direction and speed
