@@ -86,9 +86,6 @@ class MainFish(Fish):
         self._fish = pygame.image.load("game_assets/fish_images/fish2_left.png")
         self._fish = pygame.transform.scale(self._fish, (self._width, self._height))
         self._fish_rect = self._fish.get_rect(center=(650, 300))
-        self._fish_right = pygame.image.load("game_assets/fish_images/fish2_right.png")
-        self._fish_right = pygame.transform.scale(self._fish_right, (self._width, self._height))
-        self._fish_right_rect = self._fish_right.get_rect(center=(650, 300))
         self._vel_x = 0
         self._vel_y = 0
         self._acceleration = 10
@@ -183,7 +180,7 @@ class FishingNet(Obstacles):
         super(FishingNet, self).__init__()
         self._width = 300
         self._height = 90
-        self._obstacle = pygame.image.load("game_assets/obstacles/fishing_net/fishing_net.png")
+        self._obstacle = pygame.image.load("game_assets/obstacles/fishing_net/net.png")
         self._obstacle = pygame.transform.scale(self._obstacle, (self._width, self._height))
         self._obstacle_rect = self._obstacle.get_rect(topleft=(random.uniform(650, 1000), -90))
 
@@ -225,7 +222,7 @@ class SizeBooster(SpeedBooster):
         self._image_rect = self._image.get_rect(topleft=(random.uniform(100, 1200), random.uniform(200, 540)))
 
 class UserInput:
-    def __init__(self, key_input, main_fish=None, speed_boosted=0, freeze=1):
+    def __init__(self, key_input, main_fish=None, speed_boosted=1, freeze=1):
         self._key_input = key_input
         self._main_fish = main_fish
         if speed_boosted:
